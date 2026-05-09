@@ -1,5 +1,6 @@
 import secrets
 import string
+from datetime import date, timedelta, timezone, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -73,3 +74,30 @@ async def get_recent_clicks_for_url(
         .limit(limit)
     )
     return list(result)
+
+
+async def get_daily_click_counts_for_url(
+    db: AsyncSession, url_id: int, days: int
+) -> list[tuple[date, int]]:
+    utc_today = datetime.now(timezone.utc).date()
+    start_date = utc_today - timedelta(days=days - 1)
+
+    rows = await db.execute(
+        select(
+            func.date(ClickEvent.created_at).label("day"),
+            func.count(ClickEvent.id).label("clicks"),
+        )
+        .where(ClickEvent.url_id == url_id)
+        .where(ClickEvent.created_at >= start_date)
+        .group_by(func.date(ClickEvent.created_at))
+        .order_by(func.date(ClickEvent.created_at))
+    )
+
+    click_map = {row.day: int(row.clicks) for row in rows}
+
+    daily_series: list[tuple[date, int]] = []
+    for day_offset in range(days):
+        current_day = start_date + timedelta(days=day_offset)
+        daily_series.append((current_day, click_map.get(current_day, 0)))
+
+    return daily_series

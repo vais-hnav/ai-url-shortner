@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, HttpUrl
 
@@ -30,3 +30,14 @@ class URLAnalyticsResponse(BaseModel):
     short_code: str
     total_clicks: int
     recent_clicks: list[ClickEventResponse]
+
+
+class DailyClickCount(BaseModel):
+    date: date
+    clicks: int
+
+
+class URLDailyAnalyticsResponse(BaseModel):
+    short_code: str
+    days: int
+    daily_clicks: list[DailyClickCount]
