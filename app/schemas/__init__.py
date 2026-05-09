@@ -5,6 +5,7 @@ from app.schemas.url import (
     URLAnalyticsResponse,
     URLCreate,
     URLDailyAnalyticsResponse,
+    UserURLListResponse,
     URLResponse,
 )
 
@@ -15,6 +16,7 @@ __all__ = [
     "URLAnalyticsResponse",
     "DailyClickCount",
     "URLDailyAnalyticsResponse",
+    "UserURLListResponse",
     "UserRegisterRequest",
     "UserLoginRequest",
     "UserResponse",

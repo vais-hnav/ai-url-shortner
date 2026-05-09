@@ -1,10 +1,11 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 
 class URLCreate(BaseModel):
     original_url: HttpUrl
+    custom_alias: str | None = Field(default=None, min_length=3, max_length=32)
 
 
 class URLResponse(BaseModel):
@@ -42,3 +43,12 @@ class URLDailyAnalyticsResponse(BaseModel):
     short_code: str
     days: int
     daily_clicks: list[DailyClickCount]
+
+
+class UserURLListResponse(BaseModel):
+    total_count: int
+    limit: int
+    offset: int
+    has_more: bool
+    next_offset: int | None
+    items: list[URLResponse]

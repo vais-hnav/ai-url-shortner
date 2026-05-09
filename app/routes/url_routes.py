@@ -6,13 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db_session
 from app.models.user import User
-from app.routes.auth_routes import get_optional_current_user
+from app.routes.auth_routes import get_current_user, get_optional_current_user
 from app.schemas.url import (
     ClickEventResponse,
     DailyClickCount,
     URLAnalyticsResponse,
     URLCreate,
     URLDailyAnalyticsResponse,
+    UserURLListResponse,
     URLResponse,
 )
 from app.services.url_service import (
@@ -20,7 +21,9 @@ from app.services.url_service import (
     get_click_count_for_url,
     get_daily_click_counts_for_url,
     get_recent_clicks_for_url,
+    get_url_count_by_owner,
     get_shortened_url_by_code,
+    get_urls_by_owner,
     record_click_event,
 )
 
@@ -39,12 +42,40 @@ async def create_url(
             db=db,
             original_url=str(payload.original_url),
             user_id=current_user.id if current_user else None,
+            custom_alias=payload.custom_alias,
         )
         return URLResponse.model_validate(created)
+    except ValueError as exc:
+        detail = str(exc)
+        if "already in use" in detail:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail) from exc
     except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
         ) from exc
+
+
+@router.get("/mine", response_model=UserURLListResponse)
+async def get_my_urls(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+) -> UserURLListResponse:
+    total_count = await get_url_count_by_owner(db=db, owner_id=current_user.id)
+    urls = await get_urls_by_owner(
+        db=db, owner_id=current_user.id, limit=limit, offset=offset
+    )
+    has_more = offset + len(urls) < total_count
+    return UserURLListResponse(
+        total_count=total_count,
+        limit=limit,
+        offset=offset,
+        has_more=has_more,
+        next_offset=(offset + limit) if has_more else None,
+        items=[URLResponse.model_validate(url) for url in urls],
+    )
 
 
 @router.get("/{short_code}", status_code=status.HTTP_307_TEMPORARY_REDIRECT)

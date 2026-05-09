@@ -49,6 +49,18 @@ async def get_optional_current_user(
     return await get_user_by_id(db, user_id_int)
 
 
+async def get_current_user(
+    authorization: str | None = Header(default=None),
+    db: AsyncSession = Depends(get_db_session),
+) -> User:
+    user = await get_optional_current_user(authorization=authorization, db=db)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token."
+        )
+    return user
+
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(
     payload: UserRegisterRequest, db: AsyncSession = Depends(get_db_session)
@@ -87,9 +99,5 @@ async def get_me(
     authorization: str | None = Header(default=None),
     db: AsyncSession = Depends(get_db_session),
 ) -> UserResponse:
-    user = await get_optional_current_user(authorization=authorization, db=db)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token."
-        )
+    user = await get_current_user(authorization=authorization, db=db)
     return UserResponse.model_validate(user)

@@ -11,6 +11,7 @@ from app.models.url import ShortenedURL
 ALPHABET = string.ascii_letters + string.digits
 SHORT_CODE_LENGTH = 7
 MAX_GENERATION_ATTEMPTS = 10
+ALIAS_ALPHABET = string.ascii_letters + string.digits + "-_"
 
 
 def _generate_short_code() -> str:
@@ -18,8 +19,31 @@ def _generate_short_code() -> str:
 
 
 async def create_shortened_url(
-    db: AsyncSession, original_url: str, user_id: int | None = None
+    db: AsyncSession,
+    original_url: str,
+    user_id: int | None = None,
+    custom_alias: str | None = None,
 ) -> ShortenedURL:
+    if custom_alias:
+        alias = custom_alias.strip()
+        if not alias or any(char not in ALIAS_ALPHABET for char in alias):
+            raise ValueError(
+                "custom_alias can only contain letters, numbers, hyphen, and underscore."
+            )
+        existing_alias = await db.scalar(
+            select(ShortenedURL).where(ShortenedURL.short_code == alias)
+        )
+        if existing_alias:
+            raise ValueError("custom_alias is already in use.")
+
+        shortened_url = ShortenedURL(
+            original_url=original_url, short_code=alias, user_id=user_id
+        )
+        db.add(shortened_url)
+        await db.commit()
+        await db.refresh(shortened_url)
+        return shortened_url
+
     for _ in range(MAX_GENERATION_ATTEMPTS):
         short_code = _generate_short_code()
         existing = await db.scalar(
@@ -105,3 +129,23 @@ async def get_daily_click_counts_for_url(
         daily_series.append((current_day, click_map.get(current_day, 0)))
 
     return daily_series
+
+
+async def get_urls_by_owner(
+    db: AsyncSession, owner_id: int, limit: int = 50, offset: int = 0
+) -> list[ShortenedURL]:
+    result = await db.scalars(
+        select(ShortenedURL)
+        .where(ShortenedURL.user_id == owner_id)
+        .order_by(ShortenedURL.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    return list(result)
+
+
+async def get_url_count_by_owner(db: AsyncSession, owner_id: int) -> int:
+    count = await db.scalar(
+        select(func.count()).select_from(ShortenedURL).where(ShortenedURL.user_id == owner_id)
+    )
+    return int(count or 0)
