@@ -17,7 +17,9 @@ def _generate_short_code() -> str:
     return "".join(secrets.choice(ALPHABET) for _ in range(SHORT_CODE_LENGTH))
 
 
-async def create_shortened_url(db: AsyncSession, original_url: str) -> ShortenedURL:
+async def create_shortened_url(
+    db: AsyncSession, original_url: str, user_id: int | None = None
+) -> ShortenedURL:
     for _ in range(MAX_GENERATION_ATTEMPTS):
         short_code = _generate_short_code()
         existing = await db.scalar(
@@ -26,7 +28,9 @@ async def create_shortened_url(db: AsyncSession, original_url: str) -> Shortened
         if existing:
             continue
 
-        shortened_url = ShortenedURL(original_url=original_url, short_code=short_code)
+        shortened_url = ShortenedURL(
+            original_url=original_url, short_code=short_code, user_id=user_id
+        )
         db.add(shortened_url)
         await db.commit()
         await db.refresh(shortened_url)

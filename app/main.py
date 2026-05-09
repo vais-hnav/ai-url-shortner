@@ -2,10 +2,11 @@
 # Add health check route
 from fastapi import FastAPI
 
-from app.routes import url_router
+from app.routes import auth_router, url_router
 
 app = FastAPI()
 
+app.include_router(auth_router)
 app.include_router(url_router)
 
 @app.get("/")

@@ -1,3 +1,4 @@
+from app.schemas.auth import TokenResponse, UserLoginRequest, UserRegisterRequest, UserResponse
 from app.schemas.url import (
     ClickEventResponse,
     DailyClickCount,
@@ -14,4 +15,8 @@ __all__ = [
     "URLAnalyticsResponse",
     "DailyClickCount",
     "URLDailyAnalyticsResponse",
+    "UserRegisterRequest",
+    "UserLoginRequest",
+    "UserResponse",
+    "TokenResponse",
 ]

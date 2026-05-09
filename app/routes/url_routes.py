@@ -5,6 +5,8 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db_session
+from app.models.user import User
+from app.routes.auth_routes import get_optional_current_user
 from app.schemas.url import (
     ClickEventResponse,
     DailyClickCount,
@@ -28,10 +30,16 @@ logger = logging.getLogger(__name__)
 
 @router.post("", response_model=URLResponse, status_code=status.HTTP_201_CREATED)
 async def create_url(
-    payload: URLCreate, db: AsyncSession = Depends(get_db_session)
+    payload: URLCreate,
+    db: AsyncSession = Depends(get_db_session),
+    current_user: User | None = Depends(get_optional_current_user),
 ) -> URLResponse:
     try:
-        created = await create_shortened_url(db=db, original_url=str(payload.original_url))
+        created = await create_shortened_url(
+            db=db,
+            original_url=str(payload.original_url),
+            user_id=current_user.id if current_user else None,
+        )
         return URLResponse.model_validate(created)
     except RuntimeError as exc:
         raise HTTPException(
