@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy.orm import relationship
 
 from app.db.database import Base
 
@@ -16,3 +17,5 @@ class ShortenedURL(Base):
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+
+    click_events = relationship("ClickEvent", back_populates="url")

@@ -1,3 +1,8 @@
-from app.schemas.url import URLCreate, URLResponse
+from app.schemas.url import (
+    ClickEventResponse,
+    URLAnalyticsResponse,
+    URLCreate,
+    URLResponse,
+)
 
-__all__ = ["URLCreate", "URLResponse"]
+__all__ = ["URLCreate", "URLResponse", "ClickEventResponse", "URLAnalyticsResponse"]
