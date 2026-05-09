@@ -18,6 +18,7 @@ from app.schemas.url import (
 )
 from app.services.url_service import (
     create_shortened_url,
+    delete_shortened_url_by_code,
     get_click_count_for_url,
     get_daily_click_counts_for_url,
     get_recent_clicks_for_url,
@@ -76,6 +77,20 @@ async def get_my_urls(
         next_offset=(offset + limit) if has_more else None,
         items=[URLResponse.model_validate(url) for url in urls],
     )
+
+
+@router.delete("/{short_code}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_url(
+    short_code: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+) -> None:
+    try:
+        await delete_shortened_url_by_code(db=db, short_code=short_code, owner_id=current_user.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
 
 
 @router.get("/{short_code}", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
