@@ -120,13 +120,23 @@ async def redirect_to_original_url(
 
 @router.get("/{short_code}/analytics", response_model=URLAnalyticsResponse)
 async def get_url_analytics(
-    short_code: str, db: AsyncSession = Depends(get_db_session)
+    short_code: str,
+    db: AsyncSession = Depends(get_db_session),
+    current_user: User | None = Depends(get_optional_current_user),
 ) -> URLAnalyticsResponse:
     shortened_url = await get_shortened_url_by_code(db=db, short_code=short_code)
     if not shortened_url:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Short URL not found."
         )
+
+    # Check analytics access: owner or anonymous only
+    if shortened_url.user_id is not None and current_user is not None:
+        if shortened_url.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to view this URL's analytics.",
+            )
 
     total_clicks = await get_click_count_for_url(db=db, url_id=shortened_url.id)
     recent_clicks = await get_recent_clicks_for_url(db=db, url_id=shortened_url.id)
@@ -143,12 +153,21 @@ async def get_url_daily_analytics(
     short_code: str,
     days: int = Query(default=7, ge=1, le=90),
     db: AsyncSession = Depends(get_db_session),
+    current_user: User | None = Depends(get_optional_current_user),
 ) -> URLDailyAnalyticsResponse:
     shortened_url = await get_shortened_url_by_code(db=db, short_code=short_code)
     if not shortened_url:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Short URL not found."
         )
+
+    # Check analytics access: owner or anonymous only
+    if shortened_url.user_id is not None and current_user is not None:
+        if shortened_url.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to view this URL's analytics.",
+            )
 
     daily_click_counts = await get_daily_click_counts_for_url(
         db=db, url_id=shortened_url.id, days=days
