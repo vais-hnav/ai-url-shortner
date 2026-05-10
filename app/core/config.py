@@ -1,3 +1,4 @@
+from pydantic import AliasChoices, Field, model_validator, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -7,15 +8,41 @@ class Settings(BaseSettings):
 
     # JWT
     jwt_secret_key: str = "change-me-in-production"
-    jwt_access_token_expire_minutes: int = 60
+    jwt_access_token_exp_minutes: int = Field(
+        default=60,
+        validation_alias=AliasChoices(
+            "JWT_ACCESS_TOKEN_EXP_MINUTES", "JWT_ACCESS_TOKEN_EXPIRE_MINUTES"
+        ),
+    )
 
     # App
     app_name: str = "AI URL Shortener"
     debug: bool = False
 
+    @field_validator("debug", mode="before")
+    @classmethod
+    def parse_debug_flag(cls, value: bool | str) -> bool:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"1", "true", "yes", "on", "debug", "dev", "development"}:
+                return True
+            if normalized in {"0", "false", "no", "off", "prod", "production", "release"}:
+                return False
+        raise ValueError("Invalid DEBUG value.")
+
     class Config:
         env_file = ".env"
         case_sensitive = False
+
+    @model_validator(mode="after")
+    def validate_production_secrets(self) -> "Settings":
+        if not self.debug and self.jwt_secret_key == "change-me-in-production":
+            raise ValueError(
+                "JWT_SECRET_KEY must be changed when DEBUG is false."
+            )
+        return self
 
 
 settings = Settings()

@@ -10,14 +10,17 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Copy project metadata and package source
+COPY pyproject.toml .
+COPY app ./app
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies from pyproject.toml
+RUN pip install --no-cache-dir .
 
-# Copy application code
-COPY . .
+# Copy runtime files needed by the app
+COPY alembic ./alembic
+COPY alembic.ini .
+COPY docker-compose.yml .
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash app \
