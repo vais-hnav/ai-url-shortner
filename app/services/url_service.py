@@ -2,7 +2,7 @@ import secrets
 import string
 from datetime import date, timedelta, timezone, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.click_event import ClickEvent
@@ -154,19 +154,17 @@ async def get_url_count_by_owner(db: AsyncSession, owner_id: int) -> int:
 async def delete_shortened_url_by_code(
     db: AsyncSession, short_code: str, owner_id: int
 ) -> bool:
-    """Delete a URL if owned by the specified user.
-    
-    Returns True if deleted, raises ValueError if not owned by user.
-    """
+    """Delete a URL if owned by the specified user."""
     shortened_url = await db.scalar(
         select(ShortenedURL).where(ShortenedURL.short_code == short_code)
     )
     if not shortened_url:
         raise ValueError("URL not found.")
-    
+
     if shortened_url.user_id != owner_id:
         raise PermissionError("You do not have permission to delete this URL.")
-    
+
+    await db.execute(delete(ClickEvent).where(ClickEvent.url_id == shortened_url.id))
     await db.delete(shortened_url)
     await db.commit()
     return True

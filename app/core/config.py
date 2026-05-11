@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     # App
     app_name: str = "AI URL Shortener"
-    debug: bool = False
+    debug: bool = True
 
     @field_validator("debug", mode="before")
     @classmethod

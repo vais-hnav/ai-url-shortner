@@ -32,6 +32,17 @@ router = APIRouter(prefix="/urls", tags=["urls"])
 logger = logging.getLogger(__name__)
 
 
+def _ensure_analytics_access(shortened_url, current_user: User | None) -> None:
+    if shortened_url.user_id is None:
+        return
+
+    if current_user is None or shortened_url.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this URL's analytics.",
+        )
+
+
 @router.post("", response_model=URLResponse, status_code=status.HTTP_201_CREATED)
 async def create_url(
     payload: URLCreate,
@@ -130,13 +141,7 @@ async def get_url_analytics(
             status_code=status.HTTP_404_NOT_FOUND, detail="Short URL not found."
         )
 
-    # Check analytics access: owner or anonymous only
-    if shortened_url.user_id is not None and current_user is not None:
-        if shortened_url.user_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to view this URL's analytics.",
-            )
+    _ensure_analytics_access(shortened_url, current_user)
 
     total_clicks = await get_click_count_for_url(db=db, url_id=shortened_url.id)
     recent_clicks = await get_recent_clicks_for_url(db=db, url_id=shortened_url.id)
@@ -161,13 +166,7 @@ async def get_url_daily_analytics(
             status_code=status.HTTP_404_NOT_FOUND, detail="Short URL not found."
         )
 
-    # Check analytics access: owner or anonymous only
-    if shortened_url.user_id is not None and current_user is not None:
-        if shortened_url.user_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to view this URL's analytics.",
-            )
+    _ensure_analytics_access(shortened_url, current_user)
 
     daily_click_counts = await get_daily_click_counts_for_url(
         db=db, url_id=shortened_url.id, days=days
