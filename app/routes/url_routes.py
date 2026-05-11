@@ -1,4 +1,5 @@
 import logging
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
@@ -16,7 +17,10 @@ from app.schemas.url import (
     URLAnalyticsResponse,
     URLCreate,
     URLDailyAnalyticsResponse,
+    UserAnalyticsOverviewResponse,
     UserURLListResponse,
+    OverviewTrendPoint,
+    TopLinkPerformance,
     URLResponse,
 )
 from app.services.url_service import (
@@ -30,6 +34,7 @@ from app.services.url_service import (
     get_shortened_url_by_code,
     get_urls_by_owner,
     get_device_breakdown_for_url,
+    get_user_analytics_overview,
     record_click_event,
 )
 from app.services.ai_service import create_ai_insight, summarize_url
@@ -46,6 +51,12 @@ def _build_short_url(short_code: str) -> str:
 def _to_url_response(shortened_url) -> URLResponse:
     response = URLResponse.model_validate(shortened_url)
     response.short_url = _build_short_url(shortened_url.short_code)
+    return response
+
+
+def _to_url_response_with_clicks(shortened_url, total_clicks: int) -> URLResponse:
+    response = _to_url_response(shortened_url)
+    response.total_clicks = total_clicks
     return response
 
 
@@ -120,12 +131,27 @@ async def create_url(
 async def get_my_urls(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    q: str | None = Query(default=None, min_length=1, max_length=200),
+    start_date: date | None = Query(default=None),
+    end_date: date | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ) -> UserURLListResponse:
-    total_count = await get_url_count_by_owner(db=db, owner_id=current_user.id)
+    total_count = await get_url_count_by_owner(
+        db=db,
+        owner_id=current_user.id,
+        query=q,
+        start_date=start_date,
+        end_date=end_date,
+    )
     urls = await get_urls_by_owner(
-        db=db, owner_id=current_user.id, limit=limit, offset=offset
+        db=db,
+        owner_id=current_user.id,
+        limit=limit,
+        offset=offset,
+        query=q,
+        start_date=start_date,
+        end_date=end_date,
     )
     has_more = offset + len(urls) < total_count
     return UserURLListResponse(
@@ -134,7 +160,57 @@ async def get_my_urls(
         offset=offset,
         has_more=has_more,
         next_offset=(offset + limit) if has_more else None,
-        items=[_to_url_response(url) for url in urls],
+        items=[_to_url_response_with_clicks(url, total_clicks) for url, total_clicks in urls],
+    )
+
+
+@router.get("/analytics/overview", response_model=UserAnalyticsOverviewResponse)
+async def get_my_analytics_overview(
+    days: int = Query(default=7, ge=1, le=90),
+    tz_offset_minutes: int = Query(default=0, ge=-720, le=840),
+    compare_previous: bool = Query(default=False),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+) -> UserAnalyticsOverviewResponse:
+    (
+        total_links,
+        total_clicks,
+        start_date,
+        end_date,
+        trend,
+        top_links,
+        top_referrers,
+        device_breakdown,
+        previous_total_clicks,
+        click_change_percent,
+    ) = await get_user_analytics_overview(
+        db=db,
+        owner_id=current_user.id,
+        days=days,
+        tz_offset_minutes=tz_offset_minutes,
+        compare_previous=compare_previous,
+    )
+    return UserAnalyticsOverviewResponse(
+        total_links=total_links,
+        total_clicks=total_clicks,
+        previous_total_clicks=previous_total_clicks,
+        click_change_percent=click_change_percent,
+        window_days=days,
+        timezone_offset_minutes=tz_offset_minutes,
+        start_date=start_date,
+        end_date=end_date,
+        trend=[OverviewTrendPoint(date=day, clicks=clicks) for day, clicks in trend],
+        top_links=[
+            TopLinkPerformance(
+                short_code=url.short_code,
+                short_url=_build_short_url(url.short_code),
+                original_url=url.original_url,
+                clicks=clicks,
+            )
+            for url, clicks in top_links
+        ],
+        top_referrers=[LabelCount(label=label, clicks=clicks) for label, clicks in top_referrers],
+        device_breakdown=[LabelCount(label=label, clicks=clicks) for label, clicks in device_breakdown],
     )
 
 
@@ -225,6 +301,7 @@ async def get_url_analytics(
 async def get_url_daily_analytics(
     short_code: str,
     days: int = Query(default=7, ge=1, le=90),
+    tz_offset_minutes: int = Query(default=0, ge=-720, le=840),
     db: AsyncSession = Depends(get_db_session),
     current_user: User | None = Depends(get_optional_current_user),
 ) -> URLDailyAnalyticsResponse:
@@ -237,12 +314,13 @@ async def get_url_daily_analytics(
     _ensure_analytics_access(shortened_url, current_user)
 
     daily_click_counts = await get_daily_click_counts_for_url(
-        db=db, url_id=shortened_url.id, days=days
+        db=db, url_id=shortened_url.id, days=days, tz_offset_minutes=tz_offset_minutes
     )
 
     return URLDailyAnalyticsResponse(
         short_code=shortened_url.short_code,
         days=days,
+        timezone_offset_minutes=tz_offset_minutes,
         start_date=daily_click_counts[0][0],
         end_date=daily_click_counts[-1][0],
         daily_clicks=[

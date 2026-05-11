@@ -162,6 +162,18 @@ def _device_label_from_user_agent(user_agent: str | None) -> str:
     return "unknown"
 
 
+def _window_bounds_from_offset(days: int, tz_offset_minutes: int) -> tuple[date, date, datetime, datetime]:
+    offset = timedelta(minutes=tz_offset_minutes)
+    now_utc = datetime.now(timezone.utc)
+    local_today = (now_utc + offset).date()
+    start_date = local_today - timedelta(days=days - 1)
+    end_date = local_today
+
+    utc_start = datetime.combine(start_date, datetime.min.time(), tzinfo=timezone.utc) - offset
+    utc_end = datetime.combine(end_date + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc) - offset
+    return start_date, end_date, utc_start, utc_end
+
+
 async def get_device_breakdown_for_url(
     db: AsyncSession, url_id: int
 ) -> list[tuple[str, int]]:
@@ -176,23 +188,20 @@ async def get_device_breakdown_for_url(
 
 
 async def get_daily_click_counts_for_url(
-    db: AsyncSession, url_id: int, days: int
+    db: AsyncSession, url_id: int, days: int, tz_offset_minutes: int = 0
 ) -> list[tuple[date, int]]:
-    utc_today = datetime.now(timezone.utc).date()
-    start_date = utc_today - timedelta(days=days - 1)
-
-    rows = await db.execute(
-        select(
-            func.date(ClickEvent.created_at).label("day"),
-            func.count(ClickEvent.id).label("clicks"),
-        )
+    start_date, _end_date, utc_start, utc_end = _window_bounds_from_offset(days, tz_offset_minutes)
+    rows = await db.scalars(
+        select(ClickEvent.created_at)
         .where(ClickEvent.url_id == url_id)
-        .where(ClickEvent.created_at >= start_date)
-        .group_by(func.date(ClickEvent.created_at))
-        .order_by(func.date(ClickEvent.created_at))
+        .where(ClickEvent.created_at >= utc_start)
+        .where(ClickEvent.created_at < utc_end)
     )
-
-    click_map = {row.day: int(row.clicks) for row in rows}
+    click_map: dict[date, int] = {}
+    offset = timedelta(minutes=tz_offset_minutes)
+    for created_at in rows:
+        local_day = (created_at + offset).date()
+        click_map[local_day] = click_map.get(local_day, 0) + 1
 
     daily_series: list[tuple[date, int]] = []
     for day_offset in range(days):
@@ -203,22 +212,61 @@ async def get_daily_click_counts_for_url(
 
 
 async def get_urls_by_owner(
-    db: AsyncSession, owner_id: int, limit: int = 50, offset: int = 0
-) -> list[ShortenedURL]:
-    result = await db.scalars(
-        select(ShortenedURL)
+    db: AsyncSession,
+    owner_id: int,
+    limit: int = 50,
+    offset: int = 0,
+    query: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> list[tuple[ShortenedURL, int]]:
+    stmt = (
+        select(
+            ShortenedURL,
+            func.count(ClickEvent.id).label("total_clicks"),
+        )
+        .outerjoin(ClickEvent, ClickEvent.url_id == ShortenedURL.id)
         .where(ShortenedURL.user_id == owner_id)
+    )
+
+    if query:
+        pattern = f"%{query.strip()}%"
+        stmt = stmt.where(
+            ShortenedURL.short_code.ilike(pattern) | ShortenedURL.original_url.ilike(pattern)
+        )
+
+    if start_date:
+        stmt = stmt.where(ShortenedURL.created_at >= start_date)
+    if end_date:
+        stmt = stmt.where(ShortenedURL.created_at < (end_date + timedelta(days=1)))
+
+    rows = await db.execute(
+        stmt.group_by(ShortenedURL.id)
         .order_by(ShortenedURL.created_at.desc())
         .offset(offset)
         .limit(limit)
     )
-    return list(result)
+    return [(url, int(total_clicks or 0)) for url, total_clicks in rows]
 
 
-async def get_url_count_by_owner(db: AsyncSession, owner_id: int) -> int:
-    count = await db.scalar(
-        select(func.count()).select_from(ShortenedURL).where(ShortenedURL.user_id == owner_id)
-    )
+async def get_url_count_by_owner(
+    db: AsyncSession,
+    owner_id: int,
+    query: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> int:
+    stmt = select(func.count()).select_from(ShortenedURL).where(ShortenedURL.user_id == owner_id)
+    if query:
+        pattern = f"%{query.strip()}%"
+        stmt = stmt.where(
+            ShortenedURL.short_code.ilike(pattern) | ShortenedURL.original_url.ilike(pattern)
+        )
+    if start_date:
+        stmt = stmt.where(ShortenedURL.created_at >= start_date)
+    if end_date:
+        stmt = stmt.where(ShortenedURL.created_at < (end_date + timedelta(days=1)))
+    count = await db.scalar(stmt)
     return int(count or 0)
 
 
@@ -239,3 +287,133 @@ async def delete_shortened_url_by_code(
     await db.delete(shortened_url)
     await db.commit()
     return True
+
+
+async def get_user_analytics_overview(
+    db: AsyncSession, owner_id: int, days: int = 7, tz_offset_minutes: int = 0, compare_previous: bool = False
+) -> tuple[
+    int,
+    int,
+    date,
+    date,
+    list[tuple[date, int]],
+    list[tuple[ShortenedURL, int]],
+    list[tuple[str, int]],
+    list[tuple[str, int]],
+    int | None,
+    float | None,
+]:
+    total_links = await db.scalar(
+        select(func.count()).select_from(ShortenedURL).where(ShortenedURL.user_id == owner_id)
+    )
+    total_links_int = int(total_links or 0)
+
+    total_clicks = await db.scalar(
+        select(func.count(ClickEvent.id))
+        .select_from(ClickEvent)
+        .join(ShortenedURL, ShortenedURL.id == ClickEvent.url_id)
+        .where(ShortenedURL.user_id == owner_id)
+    )
+    total_clicks_int = int(total_clicks or 0)
+
+    start_date, end_date, utc_start, utc_end = _window_bounds_from_offset(days, tz_offset_minutes)
+
+    rows = await db.scalars(
+        select(ClickEvent.created_at)
+        .select_from(ClickEvent)
+        .join(ShortenedURL, ShortenedURL.id == ClickEvent.url_id)
+        .where(ShortenedURL.user_id == owner_id)
+        .where(ClickEvent.created_at >= utc_start)
+        .where(ClickEvent.created_at < utc_end)
+    )
+    click_map: dict[date, int] = {}
+    offset = timedelta(minutes=tz_offset_minutes)
+    for created_at in rows:
+        local_day = (created_at + offset).date()
+        click_map[local_day] = click_map.get(local_day, 0) + 1
+
+    trend: list[tuple[date, int]] = []
+    for day_offset in range(days):
+        day = start_date + timedelta(days=day_offset)
+        trend.append((day, click_map.get(day, 0)))
+
+    top_links_rows = await db.execute(
+        select(
+            ShortenedURL,
+            func.count(ClickEvent.id).label("clicks"),
+        )
+        .join(ClickEvent, ClickEvent.url_id == ShortenedURL.id)
+        .where(ShortenedURL.user_id == owner_id)
+        .where(ClickEvent.created_at >= utc_start)
+        .where(ClickEvent.created_at < utc_end)
+        .group_by(ShortenedURL.id)
+        .order_by(func.count(ClickEvent.id).desc(), ShortenedURL.created_at.desc())
+        .limit(5)
+    )
+    top_links: list[tuple[ShortenedURL, int]] = [
+        (url, int(clicks or 0)) for url, clicks in top_links_rows
+    ]
+
+    top_referrers_rows = await db.execute(
+        select(
+            func.coalesce(ClickEvent.referrer, "direct").label("referrer"),
+            func.count(ClickEvent.id).label("clicks"),
+        )
+        .select_from(ClickEvent)
+        .join(ShortenedURL, ShortenedURL.id == ClickEvent.url_id)
+        .where(ShortenedURL.user_id == owner_id)
+        .where(ClickEvent.created_at >= utc_start)
+        .where(ClickEvent.created_at < utc_end)
+        .group_by(func.coalesce(ClickEvent.referrer, "direct"))
+        .order_by(func.count(ClickEvent.id).desc())
+        .limit(5)
+    )
+    top_referrers = [(str(referrer), int(clicks or 0)) for referrer, clicks in top_referrers_rows]
+
+    user_agent_rows = await db.scalars(
+        select(ClickEvent.user_agent)
+        .select_from(ClickEvent)
+        .join(ShortenedURL, ShortenedURL.id == ClickEvent.url_id)
+        .where(ShortenedURL.user_id == owner_id)
+        .where(ClickEvent.created_at >= utc_start)
+        .where(ClickEvent.created_at < utc_end)
+    )
+    device_counts: dict[str, int] = {"desktop": 0, "mobile": 0, "tablet": 0, "unknown": 0}
+    for ua in user_agent_rows:
+        label = _device_label_from_user_agent(ua)
+        device_counts[label] = device_counts.get(label, 0) + 1
+    device_breakdown = [(label, count) for label, count in device_counts.items() if count > 0]
+
+    previous_total_clicks: int | None = None
+    click_change_percent: float | None = None
+    if compare_previous:
+        previous_utc_end = utc_start
+        previous_utc_start = previous_utc_end - timedelta(days=days)
+        previous_clicks = await db.scalar(
+            select(func.count(ClickEvent.id))
+            .select_from(ClickEvent)
+            .join(ShortenedURL, ShortenedURL.id == ClickEvent.url_id)
+            .where(ShortenedURL.user_id == owner_id)
+            .where(ClickEvent.created_at >= previous_utc_start)
+            .where(ClickEvent.created_at < previous_utc_end)
+        )
+        previous_total_clicks = int(previous_clicks or 0)
+        if previous_total_clicks == 0:
+            click_change_percent = 100.0 if total_clicks_int > 0 else 0.0
+        else:
+            click_change_percent = round(
+                ((total_clicks_int - previous_total_clicks) / previous_total_clicks) * 100, 2
+            )
+
+    return (
+        total_links_int,
+        total_clicks_int,
+        start_date,
+        end_date,
+        trend,
+        top_links,
+        top_referrers,
+        device_breakdown,
+        previous_total_clicks,
+        click_change_percent,
+    )

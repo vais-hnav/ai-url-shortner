@@ -20,6 +20,7 @@ class URLResponse(BaseModel):
     ai_summary: str | None = None
     ai_tags: list[str] = Field(default_factory=list)
     ai_source_mode: str | None = None
+    total_clicks: int = 0
 
 
 class ClickEventResponse(BaseModel):
@@ -54,6 +55,7 @@ class LabelCount(BaseModel):
 class URLDailyAnalyticsResponse(BaseModel):
     short_code: str
     days: int
+    timezone_offset_minutes: int
     start_date: date
     end_date: date
     daily_clicks: list[DailyClickCount]
@@ -66,3 +68,30 @@ class UserURLListResponse(BaseModel):
     has_more: bool
     next_offset: int | None
     items: list[URLResponse]
+
+
+class OverviewTrendPoint(BaseModel):
+    date: date
+    clicks: int
+
+
+class UserAnalyticsOverviewResponse(BaseModel):
+    total_links: int
+    total_clicks: int
+    previous_total_clicks: int | None = None
+    click_change_percent: float | None = None
+    window_days: int
+    timezone_offset_minutes: int
+    start_date: date
+    end_date: date
+    trend: list[OverviewTrendPoint]
+    top_links: list["TopLinkPerformance"]
+    top_referrers: list[LabelCount]
+    device_breakdown: list[LabelCount]
+
+
+class TopLinkPerformance(BaseModel):
+    short_code: str
+    short_url: str
+    original_url: str
+    clicks: int
