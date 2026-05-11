@@ -12,10 +12,45 @@ ALPHABET = string.ascii_letters + string.digits
 SHORT_CODE_LENGTH = 7
 MAX_GENERATION_ATTEMPTS = 10
 ALIAS_ALPHABET = string.ascii_letters + string.digits + "-_"
+ALIAS_MIN_LENGTH = 3
+ALIAS_MAX_LENGTH = 32
+RESERVED_ALIASES = {
+    "web",
+    "urls",
+    "auth",
+    "ai",
+    "docs",
+    "redoc",
+    "openapi.json",
+    "favicon.ico",
+    "health",
+    "admin",
+}
 
 
 def _generate_short_code() -> str:
     return "".join(secrets.choice(ALPHABET) for _ in range(SHORT_CODE_LENGTH))
+
+
+def _normalize_and_validate_alias(raw_alias: str) -> str:
+    alias = raw_alias.strip().lower()
+    if not alias:
+        raise ValueError("custom_alias cannot be empty.")
+    if len(alias) < ALIAS_MIN_LENGTH or len(alias) > ALIAS_MAX_LENGTH:
+        raise ValueError(
+            f"custom_alias length must be between {ALIAS_MIN_LENGTH} and {ALIAS_MAX_LENGTH}."
+        )
+    if any(char not in ALIAS_ALPHABET for char in alias):
+        raise ValueError(
+            "custom_alias can only contain letters, numbers, hyphen, and underscore."
+        )
+    if alias[0] in "-_" or alias[-1] in "-_":
+        raise ValueError("custom_alias cannot start or end with hyphen or underscore.")
+    if "--" in alias or "__" in alias or "-_" in alias or "_-" in alias:
+        raise ValueError("custom_alias cannot contain repeated or mixed separators.")
+    if alias.lower() in RESERVED_ALIASES:
+        raise ValueError("custom_alias is reserved and cannot be used.")
+    return alias
 
 
 async def create_shortened_url(
@@ -25,13 +60,9 @@ async def create_shortened_url(
     custom_alias: str | None = None,
 ) -> ShortenedURL:
     if custom_alias:
-        alias = custom_alias.strip()
-        if not alias or any(char not in ALIAS_ALPHABET for char in alias):
-            raise ValueError(
-                "custom_alias can only contain letters, numbers, hyphen, and underscore."
-            )
+        alias = _normalize_and_validate_alias(custom_alias)
         existing_alias = await db.scalar(
-            select(ShortenedURL).where(ShortenedURL.short_code == alias)
+            select(ShortenedURL).where(func.lower(ShortenedURL.short_code) == alias)
         )
         if existing_alias:
             raise ValueError("custom_alias is already in use.")
@@ -102,6 +133,46 @@ async def get_recent_clicks_for_url(
         .limit(limit)
     )
     return list(result)
+
+
+async def get_top_referrers_for_url(
+    db: AsyncSession, url_id: int, limit: int = 5
+) -> list[tuple[str, int]]:
+    rows = await db.execute(
+        select(
+            func.coalesce(ClickEvent.referrer, "direct").label("referrer"),
+            func.count(ClickEvent.id).label("clicks"),
+        )
+        .where(ClickEvent.url_id == url_id)
+        .group_by(func.coalesce(ClickEvent.referrer, "direct"))
+        .order_by(func.count(ClickEvent.id).desc())
+        .limit(limit)
+    )
+    return [(str(row.referrer), int(row.clicks)) for row in rows]
+
+
+def _device_label_from_user_agent(user_agent: str | None) -> str:
+    ua = (user_agent or "").lower()
+    if "mobile" in ua or "android" in ua or "iphone" in ua:
+        return "mobile"
+    if "ipad" in ua or "tablet" in ua:
+        return "tablet"
+    if ua:
+        return "desktop"
+    return "unknown"
+
+
+async def get_device_breakdown_for_url(
+    db: AsyncSession, url_id: int
+) -> list[tuple[str, int]]:
+    rows = await db.scalars(
+        select(ClickEvent.user_agent).where(ClickEvent.url_id == url_id)
+    )
+    counts: dict[str, int] = {"desktop": 0, "mobile": 0, "tablet": 0, "unknown": 0}
+    for ua in rows:
+        label = _device_label_from_user_agent(ua)
+        counts[label] = counts.get(label, 0) + 1
+    return [(label, count) for label, count in counts.items() if count > 0]
 
 
 async def get_daily_click_counts_for_url(

@@ -26,13 +26,19 @@ class ClickEventResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    referrer: str | None
+    user_agent: str | None
+    ip_address: str | None
     created_at: datetime
 
 
 class URLAnalyticsResponse(BaseModel):
     short_code: str
     total_clicks: int
+    recent_clicks_limit: int
     recent_clicks: list[ClickEventResponse]
+    top_referrers: list["LabelCount"]
+    device_breakdown: list["LabelCount"]
 
 
 class DailyClickCount(BaseModel):
@@ -40,9 +46,16 @@ class DailyClickCount(BaseModel):
     clicks: int
 
 
+class LabelCount(BaseModel):
+    label: str
+    clicks: int
+
+
 class URLDailyAnalyticsResponse(BaseModel):
     short_code: str
     days: int
+    start_date: date
+    end_date: date
     daily_clicks: list[DailyClickCount]
 
 

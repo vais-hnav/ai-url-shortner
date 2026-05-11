@@ -25,7 +25,7 @@ def health_check():
     return {"status": "ok"}
 
 
-@app.get("/{short_code}", status_code=status.HTTP_307_TEMPORARY_REDIRECT, include_in_schema=False)
+@app.get("/{short_code}", status_code=status.HTTP_301_MOVED_PERMANENTLY, include_in_schema=False)
 async def root_short_redirect(
     short_code: str, request: Request, db: AsyncSession = Depends(get_db_session)
 ) -> RedirectResponse:
@@ -45,4 +45,4 @@ async def root_short_redirect(
         await db.rollback()
         logger.exception("Failed to record click event for short_code=%s", short_code)
 
-    return RedirectResponse(url=shortened_url.original_url, status_code=307)
+    return RedirectResponse(url=shortened_url.original_url, status_code=301)

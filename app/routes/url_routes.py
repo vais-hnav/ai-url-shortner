@@ -5,12 +5,14 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.rate_limit import create_url_rate_limiter
 from app.db.database import get_db_session
 from app.models.user import User
 from app.routes.auth_routes import get_current_user, get_optional_current_user
 from app.schemas.url import (
     ClickEventResponse,
     DailyClickCount,
+    LabelCount,
     URLAnalyticsResponse,
     URLCreate,
     URLDailyAnalyticsResponse,
@@ -23,9 +25,11 @@ from app.services.url_service import (
     get_click_count_for_url,
     get_daily_click_counts_for_url,
     get_recent_clicks_for_url,
+    get_top_referrers_for_url,
     get_url_count_by_owner,
     get_shortened_url_by_code,
     get_urls_by_owner,
+    get_device_breakdown_for_url,
     record_click_event,
 )
 from app.services.ai_service import create_ai_insight, summarize_url
@@ -59,9 +63,17 @@ def _ensure_analytics_access(shortened_url, current_user: User | None) -> None:
 @router.post("", response_model=URLResponse, status_code=status.HTTP_201_CREATED)
 async def create_url(
     payload: URLCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db_session),
     current_user: User | None = Depends(get_optional_current_user),
 ) -> URLResponse:
+    client_ip = request.client.host if request.client else "unknown"
+    if not create_url_rate_limiter.allow(client_ip):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded: max 30 short links per hour per IP.",
+        )
+
     try:
         created = await create_shortened_url(
             db=db,
@@ -95,6 +107,8 @@ async def create_url(
         detail = str(exc)
         if "already in use" in detail:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail) from exc
+        if "reserved" in detail:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail) from exc
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail) from exc
     except RuntimeError as exc:
         raise HTTPException(
@@ -138,7 +152,7 @@ async def delete_url(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
 
 
-@router.get("/{short_code}", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+@router.get("/{short_code}", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 async def redirect_to_original_url(
     short_code: str, request: Request, db: AsyncSession = Depends(get_db_session)
 ) -> RedirectResponse:
@@ -160,10 +174,10 @@ async def redirect_to_original_url(
         await db.rollback()
         logger.exception("Failed to record click event for short_code=%s", short_code)
 
-    return RedirectResponse(url=shortened_url.original_url, status_code=307)
+    return RedirectResponse(url=shortened_url.original_url, status_code=301)
 
 
-@router.get("/r/{short_code}", status_code=status.HTTP_307_TEMPORARY_REDIRECT, include_in_schema=False)
+@router.get("/r/{short_code}", status_code=status.HTTP_301_MOVED_PERMANENTLY, include_in_schema=False)
 async def redirect_to_original_url_legacy(
     short_code: str, request: Request, db: AsyncSession = Depends(get_db_session)
 ) -> RedirectResponse:
@@ -173,6 +187,8 @@ async def redirect_to_original_url_legacy(
 @router.get("/{short_code}/analytics", response_model=URLAnalyticsResponse)
 async def get_url_analytics(
     short_code: str,
+    recent_limit: int = Query(default=10, ge=1, le=100),
+    top_referrers_limit: int = Query(default=5, ge=1, le=20),
     db: AsyncSession = Depends(get_db_session),
     current_user: User | None = Depends(get_optional_current_user),
 ) -> URLAnalyticsResponse:
@@ -185,12 +201,23 @@ async def get_url_analytics(
     _ensure_analytics_access(shortened_url, current_user)
 
     total_clicks = await get_click_count_for_url(db=db, url_id=shortened_url.id)
-    recent_clicks = await get_recent_clicks_for_url(db=db, url_id=shortened_url.id)
+    recent_clicks = await get_recent_clicks_for_url(
+        db=db, url_id=shortened_url.id, limit=recent_limit
+    )
+    top_referrers = await get_top_referrers_for_url(
+        db=db, url_id=shortened_url.id, limit=top_referrers_limit
+    )
+    device_breakdown = await get_device_breakdown_for_url(
+        db=db, url_id=shortened_url.id
+    )
 
     return URLAnalyticsResponse(
         short_code=shortened_url.short_code,
         total_clicks=total_clicks,
+        recent_clicks_limit=recent_limit,
         recent_clicks=[ClickEventResponse.model_validate(click) for click in recent_clicks],
+        top_referrers=[LabelCount(label=label, clicks=clicks) for label, clicks in top_referrers],
+        device_breakdown=[LabelCount(label=label, clicks=clicks) for label, clicks in device_breakdown],
     )
 
 
@@ -216,6 +243,8 @@ async def get_url_daily_analytics(
     return URLDailyAnalyticsResponse(
         short_code=shortened_url.short_code,
         days=days,
+        start_date=daily_click_counts[0][0],
+        end_date=daily_click_counts[-1][0],
         daily_clicks=[
             DailyClickCount(date=click_date, clicks=click_count)
             for click_date, click_count in daily_click_counts
