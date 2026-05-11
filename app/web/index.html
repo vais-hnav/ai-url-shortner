@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI URL Intelligence</title>
+    <link rel="stylesheet" href="/web/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <h1>AI URL Intelligence</h1>
+        <div class="session">
+          <span id="sessionState">Signed out</span>
+          <button id="logoutBtn" class="ghost">Logout</button>
+        </div>
+      </header>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>Auth</h2>
+          <form id="registerForm" class="stack">
+            <input name="email" type="email" placeholder="Email" required />
+            <input name="password" type="password" placeholder="Password" required />
+            <button type="submit">Register</button>
+          </form>
+          <form id="loginForm" class="stack">
+            <input name="email" type="email" placeholder="Email" required />
+            <input name="password" type="password" placeholder="Password" required />
+            <button type="submit">Login</button>
+          </form>
+        </article>
+
+        <article class="panel">
+          <h2>Shorten URL</h2>
+          <form id="shortenForm" class="stack">
+            <input name="original_url" type="url" placeholder="https://example.com/page" required />
+            <input name="custom_alias" type="text" placeholder="Custom alias (optional)" />
+            <button type="submit">Create Short URL</button>
+          </form>
+          <pre id="shortenOutput" class="output"></pre>
+        </article>
+
+        <article class="panel">
+          <h2>AI Summarize</h2>
+          <form id="summarizeForm" class="stack">
+            <input name="original_url" type="url" placeholder="https://example.com/article" required />
+            <input name="short_code" type="text" placeholder="Short code (optional)" />
+            <button type="submit">Summarize</button>
+          </form>
+          <pre id="aiOutput" class="output"></pre>
+        </article>
+
+        <article class="panel span-2">
+          <div class="row">
+            <h2>My URLs</h2>
+            <div class="row">
+              <button id="prevPageBtn" class="ghost">Prev</button>
+              <button id="nextPageBtn" class="ghost">Next</button>
+            </div>
+          </div>
+          <div id="mineMeta" class="meta">Sign in to load your URLs.</div>
+          <div id="mineList" class="list"></div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Event Log</h2>
+        <pre id="eventLog" class="output"></pre>
+      </section>
+    </main>
+
+    <script src="/web/app.js"></script>
+  </body>
+  </html>

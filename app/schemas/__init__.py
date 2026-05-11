@@ -1,3 +1,4 @@
+from app.schemas.ai import AIInsightResponse, AISummarizeRequest, AISummarizeResponse
 from app.schemas.auth import TokenResponse, UserLoginRequest, UserRegisterRequest, UserResponse
 from app.schemas.url import (
     ClickEventResponse,
@@ -21,4 +22,7 @@ __all__ = [
     "UserLoginRequest",
     "UserResponse",
     "TokenResponse",
+    "AISummarizeRequest",
+    "AISummarizeResponse",
+    "AIInsightResponse",
 ]

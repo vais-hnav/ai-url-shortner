@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.db.database import get_db_session
 from app.models.user import User
 from app.routes.auth_routes import get_current_user, get_optional_current_user
@@ -27,9 +28,21 @@ from app.services.url_service import (
     get_urls_by_owner,
     record_click_event,
 )
+from app.services.ai_service import create_ai_insight, summarize_url
 
 router = APIRouter(prefix="/urls", tags=["urls"])
 logger = logging.getLogger(__name__)
+
+
+def _build_short_url(short_code: str) -> str:
+    base = settings.public_base_url.rstrip("/")
+    return f"{base}/{short_code}"
+
+
+def _to_url_response(shortened_url) -> URLResponse:
+    response = URLResponse.model_validate(shortened_url)
+    response.short_url = _build_short_url(shortened_url.short_code)
+    return response
 
 
 def _ensure_analytics_access(shortened_url, current_user: User | None) -> None:
@@ -56,7 +69,28 @@ async def create_url(
             user_id=current_user.id if current_user else None,
             custom_alias=payload.custom_alias,
         )
-        return URLResponse.model_validate(created)
+        response = _to_url_response(created)
+
+        try:
+            summary, tags, source_mode, _fallback_reason = await summarize_url(
+                str(payload.original_url)
+            )
+            await create_ai_insight(
+                db=db,
+                original_url=str(payload.original_url),
+                summary=summary,
+                tags=tags,
+                user_id=current_user.id if current_user else None,
+                short_code=created.short_code,
+            )
+            response.ai_summary = summary
+            response.ai_tags = tags
+            response.ai_source_mode = source_mode
+        except Exception:
+            # Do not fail URL shortening if AI enrichment fails.
+            logger.exception("AI summarization failed for short_code=%s", created.short_code)
+
+        return response
     except ValueError as exc:
         detail = str(exc)
         if "already in use" in detail:
@@ -86,7 +120,7 @@ async def get_my_urls(
         offset=offset,
         has_more=has_more,
         next_offset=(offset + limit) if has_more else None,
-        items=[URLResponse.model_validate(url) for url in urls],
+        items=[_to_url_response(url) for url in urls],
     )
 
 
@@ -127,6 +161,13 @@ async def redirect_to_original_url(
         logger.exception("Failed to record click event for short_code=%s", short_code)
 
     return RedirectResponse(url=shortened_url.original_url, status_code=307)
+
+
+@router.get("/r/{short_code}", status_code=status.HTTP_307_TEMPORARY_REDIRECT, include_in_schema=False)
+async def redirect_to_original_url_legacy(
+    short_code: str, request: Request, db: AsyncSession = Depends(get_db_session)
+) -> RedirectResponse:
+    return await redirect_to_original_url(short_code=short_code, request=request, db=db)
 
 
 @router.get("/{short_code}/analytics", response_model=URLAnalyticsResponse)

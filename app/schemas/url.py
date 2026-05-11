@@ -15,7 +15,11 @@ class URLResponse(BaseModel):
     user_id: int | None
     original_url: str
     short_code: str
+    short_url: str | None = None
     created_at: datetime
+    ai_summary: str | None = None
+    ai_tags: list[str] = Field(default_factory=list)
+    ai_source_mode: str | None = None
 
 
 class ClickEventResponse(BaseModel):

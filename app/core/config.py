@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     # App
     app_name: str = "AI URL Shortener"
     debug: bool = True
+    public_base_url: str = "http://127.0.0.1:8000"
+
+    # AI Provider
+    ai_provider: str = "gemini"
+    gemini_api_key: str = ""
+    gemini_primary_model: str = "gemini-1.5-flash"
+    ai_request_timeout_seconds: float = 20.0
 
     @field_validator("debug", mode="before")
     @classmethod

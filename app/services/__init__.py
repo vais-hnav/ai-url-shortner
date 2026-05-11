@@ -1,3 +1,4 @@
+from app.services.ai_service import create_ai_insight, summarize_url
 from app.services.auth_service import (
     authenticate_user,
     create_user,
@@ -13,6 +14,8 @@ from app.services.url_service import (
 )
 
 __all__ = [
+    "summarize_url",
+    "create_ai_insight",
     "create_user",
     "get_user_by_email",
     "get_user_by_id",
