@@ -2,12 +2,12 @@
 
 This project is prepared for a hosted deployment on Render with the custom domain:
 
-`https://ai-url-shortner.gt.tc`
+`https://urls.rf.gd`
 
 ## Why this file exists
 
 `render.yaml` lets Render create the web service with the correct runtime, startup command,
-health check, and production environment defaults.
+dedicated `/health` check, and production environment defaults.
 
 ## What Render will do
 
@@ -15,7 +15,8 @@ health check, and production environment defaults.
 - Run Alembic migrations before starting the app
 - Start Uvicorn on Render's public port
 - Generate a JWT secret for the hosted service
-- Build short links using `https://ai-url-shortner.gt.tc`
+- Build short links using `https://urls.rf.gd`
+- Serve the web app at `/` and keep health checks on `/health`
 
 ## Environment variables you still need to set in Render
 
@@ -53,7 +54,7 @@ Keep the rest of the connection string the same, including any SSL parameters.
    - `DATABASE_URL`
    - `GEMINI_API_KEY`
 5. Deploy once and confirm the service opens on its Render URL.
-6. Add the custom domain `ai-url-shortner.gt.tc` in the Render dashboard.
+6. Add the custom domain `urls.rf.gd` in the Render dashboard.
 7. Update your DNS records at your domain provider using the values Render shows.
 8. Verify the domain in Render.
 

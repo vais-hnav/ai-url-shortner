@@ -63,18 +63,23 @@ async function refreshMine() {
     }
     el.mineList.innerHTML = slice
       .map(
-        (item) => `<div class="item url-item">
+        (item) => {
+          const shortCode = String(item.short_code || "-");
+          const shortUrl = String(item.short_url || "");
+          const originalUrl = String(item.original_url || "");
+          return `<div class="item url-item">
           <div class="url-head">
-            <strong>${item.short_code}</strong>
+            <strong>${escapeHTML(shortCode)}</strong>
             <span class="pill">${formatNumber(item.total_clicks ?? 0)} clicks</span>
           </div>
-          <a href="${item.short_url}" target="_blank" rel="noopener noreferrer">${item.short_url}</a><br>
-          ${item.original_url}
+          <a href="${escapeHTML(shortUrl)}" target="_blank" rel="noopener noreferrer">${escapeHTML(shortUrl)}</a><br>
+          ${escapeHTML(originalUrl)}
           <div class="item-actions">
-            <button class="ghost copy-url-btn" data-short-url="${item.short_url}">Copy</button>
-            <a class="ghost nav-link" href="/web/url-details.html?code=${encodeURIComponent(item.short_code)}">Details</a>
+            <button class="ghost copy-url-btn" data-short-url="${escapeHTML(shortUrl)}">Copy</button>
+            <a class="ghost nav-link" href="/web/url-details.html?code=${encodeURIComponent(shortCode)}">Details</a>
           </div>
-        </div>`
+        </div>`;
+        }
       )
       .join("");
     return;
@@ -99,18 +104,23 @@ async function refreshMine() {
     } else {
       el.mineList.innerHTML = data.items
         .map(
-          (item) => `<div class="item url-item">
+          (item) => {
+            const shortCode = String(item.short_code || "-");
+            const shortUrl = String(item.short_url || "");
+            const originalUrl = String(item.original_url || "");
+            return `<div class="item url-item">
             <div class="url-head">
-              <strong>${item.short_code}</strong>
+              <strong>${escapeHTML(shortCode)}</strong>
               <span class="pill">${formatNumber(item.total_clicks ?? 0)} clicks</span>
             </div>
-            <a href="${item.short_url}" target="_blank" rel="noopener noreferrer">${item.short_url}</a><br>
-            ${item.original_url}
+            <a href="${escapeHTML(shortUrl)}" target="_blank" rel="noopener noreferrer">${escapeHTML(shortUrl)}</a><br>
+            ${escapeHTML(originalUrl)}
             <div class="item-actions">
-              <button class="ghost copy-url-btn" data-short-url="${item.short_url}">Copy</button>
-              <a class="ghost nav-link" href="/web/url-details.html?code=${encodeURIComponent(item.short_code)}">Details</a>
+              <button class="ghost copy-url-btn" data-short-url="${escapeHTML(shortUrl)}">Copy</button>
+              <a class="ghost nav-link" href="/web/url-details.html?code=${encodeURIComponent(shortCode)}">Details</a>
             </div>
-          </div>`
+          </div>`;
+          }
         )
         .join("");
     }

@@ -6,7 +6,7 @@ services:
     region: oregon
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    healthCheckPath: /
+    healthCheckPath: /health
     autoDeploy: true
     envVars:
       - key: APP_NAME
@@ -14,7 +14,7 @@ services:
       - key: DEBUG
         value: "false"
       - key: PUBLIC_BASE_URL
-        value: https://ai-url-shortner.gt.tc
+        value: https://urls.rf.gd
       - key: JWT_ACCESS_TOKEN_EXP_MINUTES
         value: "60"
       - key: JWT_SECRET_KEY

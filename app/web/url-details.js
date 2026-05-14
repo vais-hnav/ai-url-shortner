@@ -58,7 +58,7 @@ if (!requireAuth()) {
     el.detailTrendBars.innerHTML = trend
       .map((point) => {
         const h = Math.max(3, Math.round((point.clicks / max) * 70));
-        const label = String(point.date).slice(5);
+        const label = escapeHTML(String(point.date).slice(5));
         return `<div><div class="bar"><div class="bar-fill" style="height:${h}px"></div></div><div class="bar-label">${label} · ${formatNumber(point.clicks)}</div></div>`;
       })
       .join("");
@@ -103,10 +103,10 @@ if (!requireAuth()) {
         </defs>
         <path d="${areaPath}" fill="url(#detailTrendArea)"></path>
         <path d="${linePath}" class="trend-line-path"></path>
-        ${points.map((point) => `<g><circle cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="4" class="trend-point"></circle><title>${point.shortLabel}: ${formatNumber(point.value)} clicks</title></g>`).join("")}
+        ${points.map((point) => `<g><circle cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="4" class="trend-point"></circle><title>${escapeHTML(point.shortLabel)}: ${formatNumber(point.value)} clicks</title></g>`).join("")}
         ${points
           .filter((_, index) => index === 0 || index === points.length - 1 || index % Math.ceil(points.length / 6) === 0)
-          .map((point) => `<text x="${point.x.toFixed(2)}" y="${(height - 10).toFixed(2)}" text-anchor="middle" class="trend-axis-label">${point.shortLabel}</text>`)
+          .map((point) => `<text x="${point.x.toFixed(2)}" y="${(height - 10).toFixed(2)}" text-anchor="middle" class="trend-axis-label">${escapeHTML(point.shortLabel)}</text>`)
           .join("")}
       </svg>
     `;
@@ -128,7 +128,7 @@ if (!requireAuth()) {
         const label = item.label || "Unknown";
         return `<div class="chart-row">
           <div class="chart-row-head">
-            <div class="chart-row-title">${label}</div>
+            <div class="chart-row-title">${escapeHTML(label)}</div>
             <div class="chart-row-value">${formatter(value)}</div>
           </div>
           <div class="chart-track"><div class="chart-fill ${options.accentClass || "warm"}" style="width:${width}%"></div></div>
@@ -147,13 +147,13 @@ if (!requireAuth()) {
     const segments = rows
       .map((item) => {
         const share = total ? (Number(item.clicks || 0) / total) * 100 : 0;
-        return `<div class="mix-segment" style="width:${share}%"><span>${item.label}</span></div>`;
+        return `<div class="mix-segment" style="width:${share}%"><span>${escapeHTML(item.label)}</span></div>`;
       })
       .join("");
     const legend = rows
       .map((item) => {
         const share = total ? (Number(item.clicks || 0) / total) * 100 : 0;
-        return `<div class="mix-legend-item"><span class="mix-dot"></span><span>${item.label}</span><strong>${formatPercent(share)}</strong></div>`;
+        return `<div class="mix-legend-item"><span class="mix-dot"></span><span>${escapeHTML(item.label)}</span><strong>${formatPercent(share)}</strong></div>`;
       })
       .join("");
     el.detailDeviceMixSummary.innerHTML = `<div class="mix-bar">${segments}</div><div class="mix-legend">${legend}</div>`;
@@ -200,11 +200,11 @@ if (!requireAuth()) {
         const device = item.user_agent ? (String(item.user_agent).match(/iphone|android|mobile/i) ? "mobile" : String(item.user_agent).match(/ipad|tablet/i) ? "tablet" : "desktop") : "unknown";
         return `<div class="item">
           <div class="url-head">
-            <strong>${when}</strong>
-            <span class="pill">${device}</span>
+            <strong>${escapeHTML(when)}</strong>
+            <span class="pill">${escapeHTML(device)}</span>
           </div>
           <div class="meta">Referrer</div>
-          <div>${referrer}</div>
+          <div>${escapeHTML(referrer)}</div>
         </div>`;
       })
       .join("");

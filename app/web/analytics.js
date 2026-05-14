@@ -67,6 +67,7 @@ function renderBars(trend = []) {
   );
 
   if (el.trendSummary) {
+    const peakLabel = escapeHTML(String(peakPoint.date).slice(5));
     el.trendSummary.innerHTML = `
       <div class="mini-kpi">
         <span>Average / day</span>
@@ -74,7 +75,7 @@ function renderBars(trend = []) {
       </div>
       <div class="mini-kpi">
         <span>Peak day</span>
-        <strong>${String(peakPoint.date).slice(5)}</strong>
+        <strong>${peakLabel}</strong>
       </div>
       <div class="mini-kpi">
         <span>Peak clicks</span>
@@ -90,7 +91,7 @@ function renderBars(trend = []) {
     .map((point) => {
       const clicks = Number(point.clicks || 0);
       const h = Math.max(10, Math.round((clicks / max) * 110));
-      const label = String(point.date).slice(5);
+      const label = escapeHTML(String(point.date).slice(5));
       return `<div class="trend-day">
         <div class="trend-value">${formatNumber(clicks)}</div>
         <div class="bar"><div class="bar-fill" style="height:${h}px"></div></div>
@@ -187,14 +188,14 @@ function renderTrendLineChart(trend = [], peakPoint = null, average = 0) {
           const isPeak = peakPoint && String(peakPoint.date) === String(point.date) && Number(peakPoint.clicks || 0) === point.value;
           return `<g>
             <circle cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="${isPeak ? 5.5 : 4}" class="${isPeak ? "trend-point peak" : "trend-point"}"></circle>
-            <title>${point.shortLabel}: ${formatNumber(point.value)} clicks</title>
+            <title>${escapeHTML(point.shortLabel)}: ${formatNumber(point.value)} clicks</title>
           </g>`;
         })
         .join("")}
       ${points
         .filter((_, index) => index === 0 || index === points.length - 1 || index % Math.ceil(points.length / 6) === 0)
         .map(
-          (point) => `<text x="${point.x.toFixed(2)}" y="${(height - 10).toFixed(2)}" text-anchor="middle" class="trend-axis-label">${point.shortLabel}</text>`
+          (point) => `<text x="${point.x.toFixed(2)}" y="${(height - 10).toFixed(2)}" text-anchor="middle" class="trend-axis-label">${escapeHTML(point.shortLabel)}</text>`
         )
         .join("")}
     </svg>
@@ -217,7 +218,7 @@ function renderHourlyActivity(items = []) {
           <div class="hour-bar" style="height:${height}px"></div>
         </div>
         <div class="hour-value">${formatNumber(clicks)}</div>
-        <div class="hour-label">${item.label.slice(0, 2)}</div>
+        <div class="hour-label">${escapeHTML(String(item.label || "").slice(0, 2))}</div>
       </div>`;
     })
     .join("");
@@ -235,7 +236,7 @@ function renderWeekdayHeatmap(items = []) {
       const clicks = Number(item.clicks || 0);
       const intensity = Math.max(0.12, clicks / max);
       return `<div class="weekday-cell" style="--heat:${intensity}">
-        <span>${item.label}</span>
+        <span>${escapeHTML(item.label)}</span>
         <strong>${formatNumber(clicks)}</strong>
       </div>`;
     })
@@ -262,12 +263,15 @@ function renderComparisonChart(container, items, valueKey, options = {}) {
       const label = item.label || item.short_code || "Unknown";
       const href = linkFor(item);
       const secondary = subtitle(item);
+      const safeLabel = escapeHTML(label);
+      const safeHref = escapeHTML(href);
+      const safeSecondary = escapeHTML(secondary);
       return `<div class="chart-row">
         <div class="chart-row-head">
-          <div class="chart-row-title">${href ? `<a href="${href}" class="chart-link">${label}</a>` : label}</div>
+          <div class="chart-row-title">${href ? `<a href="${safeHref}" class="chart-link">${safeLabel}</a>` : safeLabel}</div>
           <div class="chart-row-value">${formatter(value)}</div>
         </div>
-        ${secondary ? `<div class="chart-row-subtitle">${secondary}</div>` : ""}
+        ${secondary ? `<div class="chart-row-subtitle">${safeSecondary}</div>` : ""}
         <div class="chart-track"><div class="chart-fill ${accentClass}" style="width:${width}%"></div></div>
       </div>`;
     })
@@ -285,7 +289,7 @@ function renderDeviceMix(items = []) {
     .map((item) => {
       const share = total ? (Number(item.clicks || 0) / total) * 100 : 0;
       return `<div class="mix-segment" style="width:${share}%">
-        <span>${item.label}</span>
+        <span>${escapeHTML(item.label)}</span>
       </div>`;
     })
     .join("");
@@ -294,7 +298,7 @@ function renderDeviceMix(items = []) {
       const share = total ? (Number(item.clicks || 0) / total) * 100 : 0;
       return `<div class="mix-legend-item">
         <span class="mix-dot"></span>
-        <span>${item.label}</span>
+        <span>${escapeHTML(item.label)}</span>
         <strong>${formatPercent(share)}</strong>
       </div>`;
     })
@@ -362,7 +366,7 @@ function renderTrafficSplit(totalClicks, referrers = []) {
     .map(
       (source, index) => `<div class="traffic-legend-row">
         <span class="traffic-legend-dot" style="--dot:${palette[index]}"></span>
-        <span class="traffic-legend-label">${source.label}</span>
+        <span class="traffic-legend-label">${escapeHTML(source.label)}</span>
         <strong>${formatPercent(source.share)}</strong>
       </div>`
     )

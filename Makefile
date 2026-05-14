@@ -24,7 +24,7 @@ check-env:
 
 bootstrap: check-env compose-up status
 	@attempt=1; \
-	until curl -fsS http://127.0.0.1:8000/ > /dev/null; do \
+	until curl -fsS http://127.0.0.1:8000/health > /dev/null; do \
 		if [ $$attempt -ge 30 ]; then \
 			echo "bootstrap-error: app health check timed out"; \
 			docker compose logs --tail=100 app; \

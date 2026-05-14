@@ -175,6 +175,19 @@ function userMessageFromError(err, fallback = "Something went wrong. Please try 
   return raw;
 }
 
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[char];
+  });
+}
+
 function formatNumber(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "0";

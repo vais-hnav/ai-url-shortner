@@ -9,6 +9,9 @@ on:
 jobs:
   backend-checks:
     runs-on: ubuntu-latest
+    env:
+      DEBUG: "true"
+      JWT_SECRET_KEY: test-secret
 
     steps:
       - name: Checkout code
@@ -29,3 +32,7 @@ jobs:
 
       - name: Import app check
         run: python -c "from app.main import app; print('routes', len(app.routes))"
+
+      - name: App smoke check
+        run: |
+          python -c "from fastapi.testclient import TestClient; from app.main import app; client = TestClient(app); health = client.get('/health'); root = client.get('/', follow_redirects=False); assert health.status_code == 200; assert health.json() == {'status': 'ok'}; assert root.status_code == 307; assert root.headers.get('location') == '/web/auth.html'"
