@@ -39,6 +39,28 @@ class Settings(BaseSettings):
                 return False
         raise ValueError("Invalid DEBUG value.")
 
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_asyncpg_database_url(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return value
+
+        normalized = value.strip()
+        if normalized.startswith("postgres://"):
+            normalized = normalized.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif normalized.startswith("postgresql://"):
+            normalized = normalized.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+        if normalized.startswith("postgresql+asyncpg://") and "sslmode=" in normalized:
+            normalized = normalized.replace("sslmode=require", "ssl=require")
+            normalized = normalized.replace("sslmode=prefer", "ssl=prefer")
+            normalized = normalized.replace("sslmode=allow", "ssl=allow")
+            normalized = normalized.replace("sslmode=disable", "ssl=disable")
+            normalized = normalized.replace("sslmode=verify-ca", "ssl=verify-ca")
+            normalized = normalized.replace("sslmode=verify-full", "ssl=verify-full")
+
+        return normalized
+
     class Config:
         env_file = ".env"
         case_sensitive = False
