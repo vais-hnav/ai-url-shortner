@@ -138,14 +138,16 @@ async def get_recent_clicks_for_url(
 async def get_top_referrers_for_url(
     db: AsyncSession, url_id: int, limit: int = 5
 ) -> list[tuple[str, int]]:
+    referrer_label = func.coalesce(ClickEvent.referrer, "direct").label("referrer")
+    clicks_label = func.count(ClickEvent.id).label("clicks")
     rows = await db.execute(
         select(
-            func.coalesce(ClickEvent.referrer, "direct").label("referrer"),
-            func.count(ClickEvent.id).label("clicks"),
+            referrer_label,
+            clicks_label,
         )
         .where(ClickEvent.url_id == url_id)
-        .group_by(func.coalesce(ClickEvent.referrer, "direct"))
-        .order_by(func.count(ClickEvent.id).desc())
+        .group_by(ClickEvent.referrer)
+        .order_by(clicks_label.desc())
         .limit(limit)
     )
     return [(str(row.referrer), int(row.clicks)) for row in rows]
@@ -294,9 +296,17 @@ async def get_user_analytics_overview(
 ) -> tuple[
     int,
     int,
+    int,
+    float,
+    float,
+    float,
+    date | None,
+    int,
     date,
     date,
     list[tuple[date, int]],
+    list[tuple[str, int]],
+    list[tuple[str, int]],
     list[tuple[ShortenedURL, int]],
     list[tuple[str, int]],
     list[tuple[str, int]],
@@ -307,14 +317,6 @@ async def get_user_analytics_overview(
         select(func.count()).select_from(ShortenedURL).where(ShortenedURL.user_id == owner_id)
     )
     total_links_int = int(total_links or 0)
-
-    total_clicks = await db.scalar(
-        select(func.count(ClickEvent.id))
-        .select_from(ClickEvent)
-        .join(ShortenedURL, ShortenedURL.id == ClickEvent.url_id)
-        .where(ShortenedURL.user_id == owner_id)
-    )
-    total_clicks_int = int(total_clicks or 0)
 
     start_date, end_date, utc_start, utc_end = _window_bounds_from_offset(days, tz_offset_minutes)
 
@@ -327,15 +329,35 @@ async def get_user_analytics_overview(
         .where(ClickEvent.created_at < utc_end)
     )
     click_map: dict[date, int] = {}
+    hourly_click_map: dict[int, int] = {hour: 0 for hour in range(24)}
+    weekday_click_map: dict[int, int] = {weekday: 0 for weekday in range(7)}
     offset = timedelta(minutes=tz_offset_minutes)
     for created_at in rows:
-        local_day = (created_at + offset).date()
+        local_dt = created_at + offset
+        local_day = local_dt.date()
         click_map[local_day] = click_map.get(local_day, 0) + 1
+        hourly_click_map[local_dt.hour] = hourly_click_map.get(local_dt.hour, 0) + 1
+        weekday_click_map[local_dt.weekday()] = weekday_click_map.get(local_dt.weekday(), 0) + 1
 
     trend: list[tuple[date, int]] = []
     for day_offset in range(days):
         day = start_date + timedelta(days=day_offset)
         trend.append((day, click_map.get(day, 0)))
+    total_clicks_int = sum(clicks for _, clicks in trend)
+    hourly_distribution = [(f"{hour:02d}:00", hourly_click_map.get(hour, 0)) for hour in range(24)]
+    weekday_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    weekday_distribution = [
+        (weekday_labels[weekday], weekday_click_map.get(weekday, 0)) for weekday in range(7)
+    ]
+    active_links_raw = await db.scalar(
+        select(func.count(func.distinct(ShortenedURL.id)))
+        .select_from(ShortenedURL)
+        .join(ClickEvent, ClickEvent.url_id == ShortenedURL.id)
+        .where(ShortenedURL.user_id == owner_id)
+        .where(ClickEvent.created_at >= utc_start)
+        .where(ClickEvent.created_at < utc_end)
+    )
+    active_links_int = int(active_links_raw or 0)
 
     top_links_rows = await db.execute(
         select(
@@ -353,22 +375,43 @@ async def get_user_analytics_overview(
     top_links: list[tuple[ShortenedURL, int]] = [
         (url, int(clicks or 0)) for url, clicks in top_links_rows
     ]
+    average_clicks_per_active_link = round(
+        total_clicks_int / active_links_int, 2
+    ) if active_links_int else 0.0
+    top_link_share_percent = round(
+        (top_links[0][1] / total_clicks_int) * 100, 2
+    ) if total_clicks_int and top_links else 0.0
 
+    referrer_label = func.coalesce(ClickEvent.referrer, "direct").label("referrer")
+    clicks_label = func.count(ClickEvent.id).label("clicks")
     top_referrers_rows = await db.execute(
         select(
-            func.coalesce(ClickEvent.referrer, "direct").label("referrer"),
-            func.count(ClickEvent.id).label("clicks"),
+            referrer_label,
+            clicks_label,
         )
         .select_from(ClickEvent)
         .join(ShortenedURL, ShortenedURL.id == ClickEvent.url_id)
         .where(ShortenedURL.user_id == owner_id)
         .where(ClickEvent.created_at >= utc_start)
         .where(ClickEvent.created_at < utc_end)
-        .group_by(func.coalesce(ClickEvent.referrer, "direct"))
-        .order_by(func.count(ClickEvent.id).desc())
+        .group_by(ClickEvent.referrer)
+        .order_by(clicks_label.desc())
         .limit(5)
     )
     top_referrers = [(str(referrer), int(clicks or 0)) for referrer, clicks in top_referrers_rows]
+    direct_clicks_raw = await db.scalar(
+        select(func.count(ClickEvent.id))
+        .select_from(ClickEvent)
+        .join(ShortenedURL, ShortenedURL.id == ClickEvent.url_id)
+        .where(ShortenedURL.user_id == owner_id)
+        .where(ClickEvent.created_at >= utc_start)
+        .where(ClickEvent.created_at < utc_end)
+        .where(ClickEvent.referrer.is_(None))
+    )
+    direct_clicks = int(direct_clicks_raw or 0)
+    direct_traffic_share_percent = round(
+        (direct_clicks / total_clicks_int) * 100, 2
+    ) if total_clicks_int else 0.0
 
     user_agent_rows = await db.scalars(
         select(ClickEvent.user_agent)
@@ -383,6 +426,10 @@ async def get_user_analytics_overview(
         label = _device_label_from_user_agent(ua)
         device_counts[label] = device_counts.get(label, 0) + 1
     device_breakdown = [(label, count) for label, count in device_counts.items() if count > 0]
+    best_day: date | None = None
+    best_day_clicks = 0
+    if trend:
+        best_day, best_day_clicks = max(trend, key=lambda item: item[1])
 
     previous_total_clicks: int | None = None
     click_change_percent: float | None = None
@@ -408,9 +455,17 @@ async def get_user_analytics_overview(
     return (
         total_links_int,
         total_clicks_int,
+        active_links_int,
+        average_clicks_per_active_link,
+        top_link_share_percent,
+        direct_traffic_share_percent,
+        best_day,
+        best_day_clicks,
         start_date,
         end_date,
         trend,
+        hourly_distribution,
+        weekday_distribution,
         top_links,
         top_referrers,
         device_breakdown,

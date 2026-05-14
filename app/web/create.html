@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI URL Shortner</title>
+    <link rel="stylesheet" href="/web/styles.css" />
+  </head>
+  <body class="app-page create-page">
+    <main class="app-shell">
+      <header class="topbar app-topbar">
+        <a class="brand-link" href="/web/index.html" aria-label="AI URL Shortner home">
+          <span class="brand-signal" aria-hidden="true"></span>
+          <span class="brand-stack">
+            <span class="brand-label">AI link intelligence</span>
+            <strong>AI URL Shortner</strong>
+          </span>
+        </a>
+        <div class="topbar-main">
+          <nav class="nav-cluster" aria-label="Primary">
+            <a class="nav-link nav-tab" href="/web/index.html">Dashboard</a>
+            <a class="nav-link nav-tab" href="/web/create.html">Create</a>
+            <a class="nav-link nav-tab" href="/web/analytics.html">Analytics</a>
+          </nav>
+          <div class="topbar-actions">
+            <a class="ghost utility-link" href="/web/auth.html">Account</a>
+            <button id="logoutBtn" class="ghost utility-link requires-auth">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="page-hero">
+        <div class="page-hero-copy">
+          <span class="page-kicker">Creation workspace</span>
+          <h2 class="page-title">Launch short links with AI context</h2>
+          <p class="page-description">
+            Turn long destinations into compact links, keep optional aliases memorable, and surface summary and tags the moment a URL is created.
+          </p>
+        </div>
+        <div class="hero-chip-list">
+          <span class="hero-chip">Custom alias</span>
+          <span class="hero-chip">AI summary</span>
+          <span class="hero-chip">One-step publish</span>
+        </div>
+      </section>
+
+      <section class="grid one-col">
+        <article class="panel">
+          <div class="section-head">
+            <h2>Shorten URL</h2>
+            <span class="section-note">Ready to publish</span>
+          </div>
+          <form id="shortenForm" class="stack">
+            <input name="original_url" type="url" placeholder="https://example.com/page" required />
+            <input name="custom_alias" type="text" placeholder="Custom alias (optional)" />
+            <button type="submit">Create Short URL</button>
+            <div id="shortenError" class="form-error"></div>
+          </form>
+          <div id="shortUrlActions" class="row hidden">
+            <button id="copyShortUrlBtn" class="ghost utility-link">Copy Short URL</button>
+            <a id="viewDetailsBtn" class="ghost utility-link" href="#">View Details</a>
+          </div>
+          <article id="shortenOutput" class="item hidden">
+            <div class="url-head">
+              <strong id="resultShortCode">-</strong>
+              <span id="resultClicks" class="pill">0 clicks</span>
+            </div>
+            <div class="meta">Short URL</div>
+            <a id="resultShortUrl" href="#" target="_blank" rel="noopener noreferrer"></a>
+            <div class="meta">Destination</div>
+            <div id="resultOriginalUrl"></div>
+            <div id="resultAiSection" class="hidden">
+              <div class="meta">AI Summary</div>
+              <div id="resultAiSummary"></div>
+              <div class="meta">AI Tags</div>
+              <div id="resultAiTags" class="tag-row"></div>
+            </div>
+          </article>
+        </article>
+      </section>
+    </main>
+
+    <script src="/web/common.js"></script>
+    <script src="/web/create.js"></script>
+  </body>
+  </html>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI URL Shortner</title>
+    <link rel="stylesheet" href="/web/styles.css" />
+  </head>
+  <body class="app-page analytics-page">
+    <main class="app-shell">
+      <header class="topbar app-topbar">
+        <a class="brand-link" href="/web/index.html" aria-label="AI URL Shortner home">
+          <span class="brand-signal" aria-hidden="true"></span>
+          <span class="brand-stack">
+            <span class="brand-label">AI link intelligence</span>
+            <strong>AI URL Shortner</strong>
+          </span>
+        </a>
+        <div class="topbar-main">
+          <nav class="nav-cluster" aria-label="Primary">
+            <a class="nav-link nav-tab" href="/web/index.html">Dashboard</a>
+            <a class="nav-link nav-tab" href="/web/create.html">Create</a>
+            <a class="nav-link nav-tab" href="/web/analytics.html">Analytics</a>
+          </nav>
+          <div class="topbar-actions">
+            <a class="ghost utility-link" href="/web/auth.html">Account</a>
+            <button id="logoutBtn" class="ghost utility-link requires-auth">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="page-hero">
+        <div class="page-hero-copy">
+          <span class="page-kicker">Performance intelligence</span>
+          <h2 class="page-title">Read traffic like a product team</h2>
+          <p class="page-description">
+            Follow daily momentum, spot source shifts, compare device patterns, and understand which links are concentrating attention.
+          </p>
+        </div>
+        <div class="hero-chip-list">
+          <span class="hero-chip">Daily traffic</span>
+          <span class="hero-chip">Source mix</span>
+          <span class="hero-chip">Device behavior</span>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="panel span-2">
+          <div class="row section-head">
+            <h2>Overview</h2>
+            <form id="overviewForm" class="row">
+              <span class="meta">Editable days window</span>
+              <input name="days" type="number" min="1" max="90" value="7" />
+              <button type="submit" class="ghost utility-link">Refresh</button>
+            </form>
+          </div>
+          <div id="overviewError" class="form-error"></div>
+          <div id="overviewMeta" class="meta">Your analytics will appear here.</div>
+          <div class="overview-cards">
+            <div class="kpi"><span>Total Links</span><strong id="kpiLinks">-</strong></div>
+            <div class="kpi"><span>Total Clicks</span><strong id="kpiClicks">-</strong></div>
+            <div class="kpi"><span>Previous Window</span><strong id="kpiPrevClicks">-</strong></div>
+            <div class="kpi"><span>Change</span><strong id="kpiChange">-</strong></div>
+          </div>
+          <div class="overview-cards">
+            <div class="kpi"><span>Active Links</span><strong id="kpiActiveLinks">-</strong></div>
+            <div class="kpi"><span>Avg Clicks / Active Link</span><strong id="kpiAvgClicks">-</strong></div>
+            <div class="kpi"><span>Direct Traffic Share</span><strong id="kpiDirectShare">-</strong></div>
+            <div class="kpi"><span>Top Link Share</span><strong id="kpiTopShare">-</strong></div>
+          </div>
+          <div class="overview-cards two-up">
+            <div class="kpi wide-kpi"><span>Best Day</span><strong id="kpiBestDay">-</strong></div>
+            <div class="kpi wide-kpi"><span>Best Day Clicks</span><strong id="kpiBestDayClicks">-</strong></div>
+          </div>
+          <div class="daily-traffic-panel">
+            <div class="daily-traffic-header">
+              <div>
+                <h3>Daily Traffic</h3>
+                <p class="meta">Day-by-day click activity for the selected window.</p>
+              </div>
+              <div id="trendSummary" class="daily-traffic-summary"></div>
+            </div>
+            <div id="trendLineChart" class="trend-line-card"></div>
+            <div id="trendBars" class="trend-bars"></div>
+          </div>
+          <div class="split">
+            <div>
+              <h3>Hourly Activity</h3>
+              <div id="hourlyActivityChart" class="hourly-bars"></div>
+            </div>
+            <div>
+              <h3>Weekday Pattern</h3>
+              <div id="weekdayHeatmap" class="weekday-heatmap"></div>
+            </div>
+          </div>
+          <div class="split">
+            <div>
+              <h3>Top Links Performance</h3>
+              <div id="topLinksChart" class="chart-list"></div>
+            </div>
+            <div>
+              <h3>Traffic Sources</h3>
+              <div id="topReferrersChart" class="chart-list"></div>
+              <div id="trafficSplitChart" class="traffic-split-panel"></div>
+            </div>
+          </div>
+          <div class="split">
+            <div>
+              <h3>Device Mix</h3>
+              <div id="deviceMixSummary" class="mix-summary"></div>
+              <div id="deviceBreakdownChart" class="chart-list"></div>
+            </div>
+            <div>
+              <h3>Traffic Concentration</h3>
+              <div id="trafficConcentration" class="chart-panel"></div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+    </main>
+
+    <script src="/web/common.js"></script>
+    <script src="/web/analytics.js"></script>
+  </body>
+  </html>

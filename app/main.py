@@ -12,7 +12,7 @@ from app.models.url import ShortenedURL
 from app.routes import ai_router, auth_router, url_router
 from app.services.url_service import get_shortened_url_by_code, record_click_event
 
-app = FastAPI()
+app = FastAPI(title="AI URL Shortner")
 logger = logging.getLogger(__name__)
 
 app.mount("/web", StaticFiles(directory="app/web", html=True), name="web")

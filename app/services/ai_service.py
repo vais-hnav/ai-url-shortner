@@ -363,3 +363,14 @@ async def create_ai_insight(
     await db.commit()
     await db.refresh(insight)
     return insight
+
+
+async def get_latest_ai_insight_for_url(
+    db: AsyncSession, url_id: int
+) -> AIInsight | None:
+    return await db.scalar(
+        select(AIInsight)
+        .where(AIInsight.url_id == url_id)
+        .order_by(AIInsight.created_at.desc())
+        .limit(1)
+    )

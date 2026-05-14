@@ -3,73 +3,84 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI URL Intelligence</title>
+    <title>AI URL Shortner</title>
     <link rel="stylesheet" href="/web/styles.css" />
   </head>
-  <body>
+  <body class="app-page dashboard-page">
     <main class="app-shell">
-      <header class="topbar">
-        <h1>AI URL Intelligence</h1>
-        <div class="session">
-          <span id="sessionState">Signed out</span>
-          <button id="logoutBtn" class="ghost">Logout</button>
+      <header class="topbar app-topbar">
+        <a class="brand-link" href="/web/index.html" aria-label="AI URL Shortner home">
+          <span class="brand-signal" aria-hidden="true"></span>
+          <span class="brand-stack">
+            <span class="brand-label">AI link intelligence</span>
+            <strong>AI URL Shortner</strong>
+          </span>
+        </a>
+        <div class="topbar-main">
+          <nav class="nav-cluster" aria-label="Primary">
+            <a class="nav-link nav-tab" href="/web/index.html">Dashboard</a>
+            <a class="nav-link nav-tab" href="/web/create.html">Create</a>
+            <a class="nav-link nav-tab" href="/web/analytics.html">Analytics</a>
+          </nav>
+          <div class="topbar-actions">
+            <a class="ghost utility-link" href="/web/auth.html">Account</a>
+            <button id="logoutBtn" class="ghost utility-link requires-auth">Logout</button>
+          </div>
         </div>
       </header>
 
+      <section class="page-hero">
+        <div class="page-hero-copy">
+          <span class="page-kicker">Control center</span>
+          <h2 class="page-title">Keep every short link in view</h2>
+          <p class="page-description">
+            Track your saved links, search your portfolio quickly, and jump from overview to deeper analytics without losing context.
+          </p>
+        </div>
+        <div class="hero-chip-list">
+          <span class="hero-chip">Portfolio view</span>
+          <span class="hero-chip">Quick search</span>
+          <span class="hero-chip">Fast drill-down</span>
+        </div>
+      </section>
+
       <section class="grid">
-        <article class="panel">
-          <h2>Auth</h2>
-          <form id="registerForm" class="stack">
-            <input name="email" type="email" placeholder="Email" required />
-            <input name="password" type="password" placeholder="Password" required />
-            <button type="submit">Register</button>
-          </form>
-          <form id="loginForm" class="stack">
-            <input name="email" type="email" placeholder="Email" required />
-            <input name="password" type="password" placeholder="Password" required />
-            <button type="submit">Login</button>
-          </form>
-        </article>
-
-        <article class="panel">
-          <h2>Shorten URL</h2>
-          <form id="shortenForm" class="stack">
-            <input name="original_url" type="url" placeholder="https://example.com/page" required />
-            <input name="custom_alias" type="text" placeholder="Custom alias (optional)" />
-            <button type="submit">Create Short URL</button>
-          </form>
-          <pre id="shortenOutput" class="output"></pre>
-        </article>
-
-        <article class="panel">
-          <h2>AI Summarize</h2>
-          <form id="summarizeForm" class="stack">
-            <input name="original_url" type="url" placeholder="https://example.com/article" required />
-            <input name="short_code" type="text" placeholder="Short code (optional)" />
-            <button type="submit">Summarize</button>
-          </form>
-          <pre id="aiOutput" class="output"></pre>
+        <article class="panel span-2">
+          <div class="row section-head">
+            <h2>Quick Overview</h2>
+            <a class="ghost utility-link" href="/web/analytics.html">Open Full Analytics</a>
+          </div>
+          <div class="overview-cards">
+            <div class="kpi"><span>Total Links</span><strong id="dashLinks">-</strong></div>
+            <div class="kpi"><span>Total Clicks</span><strong id="dashClicks">-</strong></div>
+            <div class="kpi"><span>Window</span><strong id="dashWindow">7d</strong></div>
+            <div class="kpi"><span>Change</span><strong id="dashChange">-</strong></div>
+          </div>
         </article>
 
         <article class="panel span-2">
-          <div class="row">
+          <div class="row section-head">
             <h2>My URLs</h2>
             <div class="row">
-              <button id="prevPageBtn" class="ghost">Prev</button>
-              <button id="nextPageBtn" class="ghost">Next</button>
+              <button id="prevPageBtn" class="ghost utility-link">Prev</button>
+              <button id="nextPageBtn" class="ghost utility-link">Next</button>
             </div>
           </div>
-          <div id="mineMeta" class="meta">Sign in to load your URLs.</div>
+          <form id="mineFiltersForm" class="filter-row">
+            <input name="q" type="text" placeholder="Search short code or URL" />
+            <input name="start_date" type="date" />
+            <input name="end_date" type="date" />
+            <button type="submit" class="ghost">Apply</button>
+          </form>
+          <div id="mineError" class="form-error"></div>
+          <div id="mineMeta" class="meta">Your links will appear here.</div>
           <div id="mineList" class="list"></div>
         </article>
       </section>
 
-      <section class="panel">
-        <h2>Event Log</h2>
-        <pre id="eventLog" class="output"></pre>
-      </section>
     </main>
 
-    <script src="/web/app.js"></script>
+    <script src="/web/common.js"></script>
+    <script src="/web/dashboard.js"></script>
   </body>
   </html>

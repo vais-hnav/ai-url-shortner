@@ -17,6 +17,7 @@ from app.schemas.url import (
     URLAnalyticsResponse,
     URLCreate,
     URLDailyAnalyticsResponse,
+    URLDetailsResponse,
     UserAnalyticsOverviewResponse,
     UserURLListResponse,
     OverviewTrendPoint,
@@ -37,7 +38,11 @@ from app.services.url_service import (
     get_user_analytics_overview,
     record_click_event,
 )
-from app.services.ai_service import create_ai_insight, summarize_url
+from app.services.ai_service import (
+    create_ai_insight,
+    get_latest_ai_insight_for_url,
+    summarize_url,
+)
 
 router = APIRouter(prefix="/urls", tags=["urls"])
 logger = logging.getLogger(__name__)
@@ -175,9 +180,17 @@ async def get_my_analytics_overview(
     (
         total_links,
         total_clicks,
+        active_links,
+        average_clicks_per_active_link,
+        top_link_share_percent,
+        direct_traffic_share_percent,
+        best_day,
+        best_day_clicks,
         start_date,
         end_date,
         trend,
+        hourly_distribution,
+        weekday_distribution,
         top_links,
         top_referrers,
         device_breakdown,
@@ -193,6 +206,12 @@ async def get_my_analytics_overview(
     return UserAnalyticsOverviewResponse(
         total_links=total_links,
         total_clicks=total_clicks,
+        active_links=active_links,
+        average_clicks_per_active_link=average_clicks_per_active_link,
+        top_link_share_percent=top_link_share_percent,
+        direct_traffic_share_percent=direct_traffic_share_percent,
+        best_day=best_day,
+        best_day_clicks=best_day_clicks,
         previous_total_clicks=previous_total_clicks,
         click_change_percent=click_change_percent,
         window_days=days,
@@ -200,6 +219,12 @@ async def get_my_analytics_overview(
         start_date=start_date,
         end_date=end_date,
         trend=[OverviewTrendPoint(date=day, clicks=clicks) for day, clicks in trend],
+        hourly_distribution=[
+            LabelCount(label=label, clicks=clicks) for label, clicks in hourly_distribution
+        ],
+        weekday_distribution=[
+            LabelCount(label=label, clicks=clicks) for label, clicks in weekday_distribution
+        ],
         top_links=[
             TopLinkPerformance(
                 short_code=url.short_code,
@@ -211,6 +236,43 @@ async def get_my_analytics_overview(
         ],
         top_referrers=[LabelCount(label=label, clicks=clicks) for label, clicks in top_referrers],
         device_breakdown=[LabelCount(label=label, clicks=clicks) for label, clicks in device_breakdown],
+    )
+
+
+@router.get("/{short_code}/details", response_model=URLDetailsResponse)
+async def get_url_details(
+    short_code: str,
+    db: AsyncSession = Depends(get_db_session),
+    current_user: User | None = Depends(get_optional_current_user),
+) -> URLDetailsResponse:
+    shortened_url = await get_shortened_url_by_code(db=db, short_code=short_code)
+    if not shortened_url:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Short URL not found."
+        )
+
+    _ensure_analytics_access(shortened_url, current_user)
+
+    total_clicks = await get_click_count_for_url(db=db, url_id=shortened_url.id)
+    latest_insight = await get_latest_ai_insight_for_url(db=db, url_id=shortened_url.id)
+    ai_tags: list[str] = []
+    ai_summary: str | None = None
+    ai_last_updated_at = None
+    if latest_insight:
+        ai_summary = latest_insight.summary
+        ai_tags = [tag.strip() for tag in latest_insight.tags.split(",") if tag.strip()]
+        ai_last_updated_at = latest_insight.created_at
+
+    return URLDetailsResponse(
+        id=shortened_url.id,
+        short_code=shortened_url.short_code,
+        short_url=_build_short_url(shortened_url.short_code),
+        original_url=shortened_url.original_url,
+        created_at=shortened_url.created_at,
+        total_clicks=total_clicks,
+        ai_summary=ai_summary,
+        ai_tags=ai_tags,
+        ai_last_updated_at=ai_last_updated_at,
     )
 
 

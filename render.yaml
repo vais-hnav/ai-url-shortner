@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: ai-url-shortner
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: APP_NAME
+        value: AI URL Shortner
+      - key: DEBUG
+        value: "false"
+      - key: PUBLIC_BASE_URL
+        value: https://ai-url-shortner.gt.tc
+      - key: JWT_ACCESS_TOKEN_EXP_MINUTES
+        value: "60"
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: AI_PROVIDER
+        value: gemini
+      - key: GEMINI_PRIMARY_MODEL
+        value: gemini-2.5-flash
+      - key: DATABASE_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
