@@ -14,11 +14,26 @@ class Settings(BaseSettings):
             "JWT_ACCESS_TOKEN_EXP_MINUTES", "JWT_ACCESS_TOKEN_EXPIRE_MINUTES"
         ),
     )
+    email_verification_token_exp_hours: int = 24
 
     # App
     app_name: str = "AI URL Shortner"
     debug: bool = True
     public_base_url: str = "http://127.0.0.1:8000"
+
+    # Google OAuth
+    google_client_id: str = ""
+    google_client_secret: str = ""
+
+    # Mail
+    mail_from: str = ""
+    mail_from_name: str = "AI URL Shortner"
+    mail_server: str = ""
+    mail_port: int = 587
+    mail_username: str = ""
+    mail_password: str = ""
+    mail_starttls: bool = True
+    mail_ssl_tls: bool = False
 
     # AI Provider
     ai_provider: str = "gemini"
@@ -60,6 +75,20 @@ class Settings(BaseSettings):
             normalized = normalized.replace("sslmode=verify-full", "ssl=verify-full")
 
         return normalized
+
+    @property
+    def google_oauth_enabled(self) -> bool:
+        return bool(self.google_client_id and self.google_client_secret)
+
+    @property
+    def mail_enabled(self) -> bool:
+        required = [
+            self.mail_from,
+            self.mail_server,
+            self.mail_username,
+            self.mail_password,
+        ]
+        return all(bool(value) for value in required)
 
     class Config:
         env_file = ".env"

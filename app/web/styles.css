@@ -263,6 +263,35 @@ body::before {
     rgba(12, 12, 10, 0.66);
 }
 
+.auth-status-banner {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 176, 0, 0.24);
+  border-radius: 12px;
+  background: rgba(255, 250, 240, 0.05);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.auth-status-banner[data-tone="success"] {
+  border-color: rgba(216, 255, 79, 0.34);
+  background: rgba(216, 255, 79, 0.08);
+}
+
+.auth-status-banner[data-tone="error"] {
+  border-color: rgba(255, 122, 122, 0.34);
+  background: rgba(255, 122, 122, 0.08);
+}
+
+.auth-action-slot {
+  margin-bottom: 16px;
+}
+
+.auth-inline-link {
+  justify-content: center;
+}
+
 .auth-benefit-list {
   display: grid;
   gap: 12px;
@@ -715,6 +744,49 @@ button:disabled {
   min-height: 16px;
   color: var(--danger);
   font-size: 12px;
+}
+
+.auth-divider {
+  position: relative;
+  margin: 14px 0 12px;
+  text-align: center;
+}
+
+.auth-divider::before {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 1px;
+  background: rgba(255, 250, 240, 0.08);
+}
+
+.auth-divider span {
+  position: relative;
+  display: inline-flex;
+  padding: 0 10px;
+  background: rgba(20, 20, 16, 0.92);
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.oauth-button {
+  justify-content: center;
+  border-color: rgba(255, 250, 240, 0.16);
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.08), rgba(255, 250, 240, 0.03)),
+    rgba(8, 8, 7, 0.66);
+}
+
+.oauth-button:hover {
+  border-color: rgba(255, 176, 0, 0.38);
+}
+
+.auth-inline-form {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 250, 240, 0.08);
 }
 
 .list {

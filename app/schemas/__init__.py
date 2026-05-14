@@ -1,5 +1,14 @@
 from app.schemas.ai import AIInsightResponse, AISummarizeRequest, AISummarizeResponse
-from app.schemas.auth import TokenResponse, UserLoginRequest, UserRegisterRequest, UserResponse
+from app.schemas.auth import (
+    AuthStatusResponse,
+    MessageResponse,
+    ResendVerificationRequest,
+    TokenResponse,
+    UserLoginRequest,
+    UserRegisterRequest,
+    UserResponse,
+    VerifyEmailRequest,
+)
 from app.schemas.url import (
     ClickEventResponse,
     DailyClickCount,
@@ -22,6 +31,10 @@ __all__ = [
     "UserLoginRequest",
     "UserResponse",
     "TokenResponse",
+    "MessageResponse",
+    "VerifyEmailRequest",
+    "ResendVerificationRequest",
+    "AuthStatusResponse",
     "AISummarizeRequest",
     "AISummarizeResponse",
     "AIInsightResponse",

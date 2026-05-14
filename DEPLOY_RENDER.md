@@ -24,6 +24,19 @@ These are intentionally marked `sync: false` in `render.yaml`, which means you s
 
 - `DATABASE_URL`
 - `GEMINI_API_KEY`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `MAIL_FROM`
+- `MAIL_SERVER`
+- `MAIL_USERNAME`
+- `MAIL_PASSWORD`
+
+These also matter for auth flows:
+
+- `EMAIL_VERIFICATION_TOKEN_EXP_HOURS`
+- `MAIL_PORT`
+- `MAIL_STARTTLS`
+- `MAIL_SSL_TLS`
 
 ## Recommended database choice
 
@@ -57,6 +70,23 @@ Keep the rest of the connection string the same, including any SSL parameters.
 6. Add the custom domain `urls.rf.gd` in the Render dashboard.
 7. Update your DNS records at your domain provider using the values Render shows.
 8. Verify the domain in Render.
+
+## Auth setup notes
+
+For email verification:
+
+- Use an SMTP-capable provider such as Resend SMTP, SendGrid SMTP, Mailgun SMTP, or Gmail SMTP for testing.
+- Set `MAIL_FROM` to the sender address users should see.
+- Verification links are generated from `PUBLIC_BASE_URL`, so this must match your real domain.
+
+For Google sign in:
+
+- Create an OAuth client in Google Cloud Console.
+- Add your local callback:
+  `http://127.0.0.1:8000/auth/google/callback`
+- Add your production callback:
+  `https://urls.rf.gd/auth/google/callback`
+- Add the same production domain to the authorized JavaScript origins if Google asks for it.
 
 ## Important production note
 

@@ -4,6 +4,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import settings
 from app.db.database import get_db_session
@@ -13,6 +14,13 @@ from app.services.url_service import get_shortened_url_by_code, record_click_eve
 
 app = FastAPI(title=settings.app_name)
 logger = logging.getLogger(__name__)
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.jwt_secret_key,
+    same_site="lax",
+    https_only=not settings.debug,
+)
 
 app.mount("/web", StaticFiles(directory="app/web", html=True), name="web")
 app.include_router(ai_router)
