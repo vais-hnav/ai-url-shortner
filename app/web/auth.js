@@ -26,9 +26,12 @@ const el = {
 };
 initShell();
 let authRevealed = false;
+const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
 
-if (window.matchMedia("(pointer: coarse)").matches) {
+if (isCoarsePointer) {
   el.enterAuthBtn.textContent = "Tap to enter";
+} else {
+  el.enterAuthBtn.textContent = "Move to bottom";
 }
 
 function revealAuthPanel({ focusMode = null } = {}) {
@@ -44,9 +47,16 @@ function revealAuthPanel({ focusMode = null } = {}) {
   }
   authRevealed = true;
   document.body.classList.add("auth-revealed");
-  el.enterAuthBtn.textContent = "Sign in open";
+  el.enterAuthBtn.textContent = isCoarsePointer ? "Tap to enter" : "Move up to close";
   const loginInput = el.loginForm?.querySelector("input[name='email']");
   window.setTimeout(() => loginInput?.focus(), 260);
+}
+
+function collapseAuthPanel() {
+  if (!authRevealed) return;
+  authRevealed = false;
+  document.body.classList.remove("auth-revealed");
+  el.enterAuthBtn.textContent = isCoarsePointer ? "Tap to enter" : "Move to bottom";
 }
 
 function setAuthMode(mode) {
@@ -161,10 +171,24 @@ function handleAuthQueryState() {
   }
 }
 
+function handlePointerReveal(event) {
+  if (isCoarsePointer || !event || typeof event.clientY !== "number") return;
+  const height = window.innerHeight || document.documentElement.clientHeight || 0;
+  if (!height) return;
+  const openZone = height * 0.78;
+  const closeZone = height * 0.58;
+  if (!authRevealed && event.clientY >= openZone) {
+    revealAuthPanel();
+  } else if (authRevealed && event.clientY <= closeZone) {
+    collapseAuthPanel();
+  }
+}
+
 el.showLoginBtn.addEventListener("click", () => setAuthMode("login"));
 el.showRegisterBtn.addEventListener("click", () => setAuthMode("register"));
 el.showGuestBtn.addEventListener("click", () => setAuthMode("guest"));
 el.enterAuthBtn.addEventListener("click", () => revealAuthPanel());
+window.addEventListener("pointermove", handlePointerReveal, { passive: true });
 if (el.openGuestCreateLink) {
   el.openGuestCreateLink.addEventListener("click", () => setGuestSession(true));
 }
