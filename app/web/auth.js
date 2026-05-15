@@ -44,6 +44,7 @@ function revealAuthPanel({ focusMode = null } = {}) {
   }
   authRevealed = true;
   document.body.classList.add("auth-revealed");
+  el.enterAuthBtn.textContent = "Sign in open";
   const loginInput = el.loginForm?.querySelector("input[name='email']");
   window.setTimeout(() => loginInput?.focus(), 260);
 }
@@ -100,20 +101,29 @@ async function loadAuthStatus() {
   try {
     const status = await api("/auth/status");
     const enabled = Boolean(status.google_oauth_enabled);
-    [el.loginGoogleBtn, el.registerGoogleBtn, el.loginDivider, el.registerDivider].forEach((node) => {
+    [el.loginGoogleBtn, el.registerGoogleBtn].forEach((node) => {
       if (!node) return;
-      node.classList.toggle("hidden", !enabled);
+      node.disabled = !enabled;
+      node.classList.toggle("is-disabled", !enabled);
+      node.setAttribute("aria-disabled", String(!enabled));
+    });
+    [el.loginDivider, el.registerDivider].forEach((node) => {
+      if (!node) return;
+      node.classList.remove("hidden");
     });
     if (status.debug_mode && !status.mail_enabled) {
       setAuthStatus(
         "Email delivery is not configured in this environment yet. Debug verification links will be shown after signup or resend.",
         "info"
       );
+    } else if (!enabled) {
+      setAuthStatus("Google sign in is not configured yet.", "info");
     }
   } catch {
-    [el.loginGoogleBtn, el.registerGoogleBtn, el.loginDivider, el.registerDivider].forEach((node) => {
+    [el.loginGoogleBtn, el.registerGoogleBtn].forEach((node) => {
       if (!node) return;
-      node.classList.add("hidden");
+      node.disabled = true;
+      node.classList.add("is-disabled");
     });
   }
 }
@@ -155,9 +165,6 @@ el.showLoginBtn.addEventListener("click", () => setAuthMode("login"));
 el.showRegisterBtn.addEventListener("click", () => setAuthMode("register"));
 el.showGuestBtn.addEventListener("click", () => setAuthMode("guest"));
 el.enterAuthBtn.addEventListener("click", () => revealAuthPanel());
-el.authHero.addEventListener("mousemove", () => revealAuthPanel(), { once: true });
-el.authHero.addEventListener("touchstart", () => revealAuthPanel(), { once: true });
-el.authHero.addEventListener("wheel", () => revealAuthPanel(), { once: true });
 if (el.openGuestCreateLink) {
   el.openGuestCreateLink.addEventListener("click", () => setGuestSession(true));
 }

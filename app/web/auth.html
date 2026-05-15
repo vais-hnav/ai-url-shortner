@@ -25,9 +25,7 @@
         <div class="auth-hero-glow auth-hero-glow-a"></div>
         <div class="auth-hero-glow auth-hero-glow-b"></div>
 
-        <button id="enterAuthBtn" class="auth-reveal-pill" type="button">
-          Move cursor to enter
-        </button>
+        <button id="enterAuthBtn" class="auth-reveal-pill" type="button">Open sign in</button>
       </section>
 
       <section class="auth-drawer" id="authDrawer" aria-label="Authentication">
@@ -51,8 +49,8 @@
 
             <section id="loginSection" class="auth-section" role="tabpanel">
               <h3>Login</h3>
-              <button id="loginGoogleBtn" class="ghost oauth-button hidden" type="button">Continue with Google</button>
-              <div id="loginDivider" class="auth-divider hidden"><span>or use email</span></div>
+              <button id="loginGoogleBtn" class="ghost oauth-button" type="button">Continue with Google</button>
+              <div id="loginDivider" class="auth-divider"><span>or use email</span></div>
               <form id="loginForm" class="stack">
                 <label>
                   <span>Email</span>
@@ -65,20 +63,12 @@
                 <button type="submit">Login</button>
                 <div id="loginError" class="form-error"></div>
               </form>
-              <form id="resendForm" class="stack auth-inline-form">
-                <label>
-                  <span>Need another verification email?</span>
-                  <input id="resendEmailInput" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
-                </label>
-                <button type="submit" class="ghost">Resend Verification</button>
-                <div id="resendError" class="form-error"></div>
-              </form>
             </section>
 
             <section id="registerSection" class="auth-section hidden" role="tabpanel">
               <h3>Register</h3>
-              <button id="registerGoogleBtn" class="ghost oauth-button hidden" type="button">Continue with Google</button>
-              <div id="registerDivider" class="auth-divider hidden"><span>or create with email</span></div>
+              <button id="registerGoogleBtn" class="ghost oauth-button" type="button">Continue with Google</button>
+              <div id="registerDivider" class="auth-divider"><span>or create with email</span></div>
               <form id="registerForm" class="stack">
                 <label>
                   <span>Email</span>
@@ -90,6 +80,21 @@
                 </label>
                 <button type="submit">Register</button>
                 <div id="registerError" class="form-error"></div>
+              </form>
+            </section>
+
+            <section class="auth-verification">
+              <div class="auth-verification-copy">
+                <h3>Verification</h3>
+                <p class="meta">Need another email verification link? Send it here without opening the login form.</p>
+              </div>
+              <form id="resendForm" class="stack auth-inline-form">
+                <label>
+                  <span>Email</span>
+                  <input id="resendEmailInput" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+                </label>
+                <button type="submit" class="ghost">Resend Verification</button>
+                <div id="resendError" class="form-error"></div>
               </form>
             </section>
 

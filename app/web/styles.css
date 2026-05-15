@@ -182,6 +182,10 @@ body::before {
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
 }
 
+.auth-reveal-pill:hover {
+  transform: translateX(-50%) translateY(-1px);
+}
+
 .auth-drawer {
   position: fixed;
   left: 0;
@@ -216,6 +220,17 @@ body::before {
 
 .auth-panel-copy .meta {
   margin-bottom: 0;
+}
+
+.auth-verification {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 250, 240, 0.08);
+}
+
+.auth-verification-copy h3 {
+  margin: 0 0 8px;
+  font-size: 1.02rem;
 }
 
 .auth-panel-badge,
@@ -781,6 +796,14 @@ button:disabled {
 
 .oauth-button:hover {
   border-color: rgba(255, 176, 0, 0.38);
+}
+
+.oauth-button.is-disabled,
+.oauth-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
+  transform: none;
+  box-shadow: none;
 }
 
 .auth-inline-form {
