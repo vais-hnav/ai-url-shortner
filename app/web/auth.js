@@ -175,8 +175,8 @@ function handlePointerReveal(event) {
   if (isCoarsePointer || !event || typeof event.clientY !== "number") return;
   const height = window.innerHeight || document.documentElement.clientHeight || 0;
   if (!height) return;
-  const openZone = height * 0.95;
-  const closeZone = height * 0.3;
+  const openZone = height * 0.7;
+  const closeZone = height * 0.05;
   if (!authRevealed && event.clientY >= openZone) {
     revealAuthPanel();
   } else if (authRevealed && event.clientY <= closeZone) {
