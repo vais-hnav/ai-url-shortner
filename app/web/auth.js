@@ -47,7 +47,7 @@ function revealAuthPanel({ focusMode = null } = {}) {
   }
   authRevealed = true;
   document.body.classList.add("auth-revealed");
-  el.enterAuthBtn.textContent = isCoarsePointer ? "Tap to enter" : "Move up to close";
+  el.enterAuthBtn.textContent = isCoarsePointer ? "Tap to enter" : "Move to top to close";
   const loginInput = el.loginForm?.querySelector("input[name='email']");
   window.setTimeout(() => loginInput?.focus(), 260);
 }
@@ -175,8 +175,8 @@ function handlePointerReveal(event) {
   if (isCoarsePointer || !event || typeof event.clientY !== "number") return;
   const height = window.innerHeight || document.documentElement.clientHeight || 0;
   if (!height) return;
-  const openZone = height * 0.78;
-  const closeZone = height * 0.58;
+  const openZone = height * 0.7;
+  const closeZone = height * 0.3;
   if (!authRevealed && event.clientY >= openZone) {
     revealAuthPanel();
   } else if (authRevealed && event.clientY <= closeZone) {
