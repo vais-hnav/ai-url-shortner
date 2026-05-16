@@ -17,5 +17,30 @@ services:
       timeout: 5s
       retries: 10
 
+  app:
+    build: .
+    container_name: ai_url_shortener_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/ai_url_shortener
+      - JWT_SECRET_KEY=your-super-secret-key-change-this-in-production
+      - JWT_ACCESS_TOKEN_EXP_MINUTES=60
+      - APP_NAME=AI URL Shortner
+      - DEBUG=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 volumes:
   postgres_data:

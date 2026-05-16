@@ -1,1 +1,1 @@
-# AI URL Shortener Package
+# AI URL Shortner Package

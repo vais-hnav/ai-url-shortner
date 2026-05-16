@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: ai-url-shortner
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: APP_NAME
+        value: AI URL Shortner
+      - key: DEBUG
+        value: "false"
+      - key: PUBLIC_BASE_URL
+        value: https://urls.rf.gd
+      - key: JWT_ACCESS_TOKEN_EXP_MINUTES
+        value: "60"
+      - key: EMAIL_VERIFICATION_TOKEN_EXP_HOURS
+        value: "24"
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_SERVER
+        sync: false
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_STARTTLS
+        value: "true"
+      - key: MAIL_SSL_TLS
+        value: "false"
+      - key: AI_PROVIDER
+        value: gemini
+      - key: GEMINI_PRIMARY_MODEL
+        value: gemini-2.5-flash
+      - key: DATABASE_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false

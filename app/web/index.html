@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="AI URL Shortner dashboard for managing short links, AI context, and traffic analytics."
+    />
+    <meta name="theme-color" content="#090909" />
+    <title>AI URL Shortner</title>
+    <link rel="stylesheet" href="/web/styles.css" />
+  </head>
+  <body class="app-page dashboard-page">
+    <main class="app-shell">
+      <header class="topbar app-topbar">
+        <a class="brand-link" href="/web/index.html" aria-label="AI URL Shortner home">
+          <span class="brand-signal" aria-hidden="true"></span>
+          <span class="brand-stack">
+            <span class="brand-label">AI link intelligence</span>
+            <strong>AI URL Shortner</strong>
+          </span>
+        </a>
+        <div class="topbar-main">
+          <nav class="nav-cluster" aria-label="Primary">
+            <a class="nav-link nav-tab" href="/web/index.html">Dashboard</a>
+            <a class="nav-link nav-tab" href="/web/create.html">Create</a>
+            <a class="nav-link nav-tab" href="/web/analytics.html">Analytics</a>
+          </nav>
+          <div class="topbar-actions">
+            <a class="ghost utility-link" href="/web/auth.html">Account</a>
+            <button id="logoutBtn" class="ghost utility-link requires-auth">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="page-hero">
+        <div class="page-hero-copy">
+          <span class="page-kicker">Control center</span>
+          <h2 class="page-title">Keep every short link in view</h2>
+          <p class="page-description">
+            Track your saved links, search your portfolio quickly, and jump from overview to deeper analytics without losing context.
+          </p>
+        </div>
+        <div class="hero-chip-list">
+          <span class="hero-chip">Portfolio view</span>
+          <span class="hero-chip">Quick search</span>
+          <span class="hero-chip">Fast drill-down</span>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="panel span-2">
+          <div class="row section-head">
+            <h2>Quick Overview</h2>
+            <a class="ghost utility-link" href="/web/analytics.html">Open Full Analytics</a>
+          </div>
+          <div class="overview-cards">
+            <div class="kpi"><span>Total Links</span><strong id="dashLinks">-</strong></div>
+            <div class="kpi"><span>Total Clicks</span><strong id="dashClicks">-</strong></div>
+            <div class="kpi"><span>Window</span><strong id="dashWindow">7d</strong></div>
+            <div class="kpi"><span>Change</span><strong id="dashChange">-</strong></div>
+          </div>
+        </article>
+
+        <article class="panel span-2">
+          <div class="row section-head">
+            <h2>My URLs</h2>
+            <div class="row">
+              <button id="prevPageBtn" class="ghost utility-link">Prev</button>
+              <button id="nextPageBtn" class="ghost utility-link">Next</button>
+            </div>
+          </div>
+          <form id="mineFiltersForm" class="filter-row">
+            <input name="q" type="text" placeholder="Search short code or URL" />
+            <input name="start_date" type="date" />
+            <input name="end_date" type="date" />
+            <button type="submit" class="ghost">Apply</button>
+          </form>
+          <div id="mineError" class="form-error"></div>
+          <div id="mineMeta" class="meta">Your links will appear here.</div>
+          <div id="mineList" class="list"></div>
+        </article>
+      </section>
+
+    </main>
+
+    <script src="/web/common.js"></script>
+    <script src="/web/dashboard.js"></script>
+  </body>
+  </html>

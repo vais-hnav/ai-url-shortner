@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="AI URL Shortner creates short links with AI summaries, saved link history, and traffic analytics."
+    />
+    <meta name="theme-color" content="#090909" />
+    <title>AI URL Shortner</title>
+    <link rel="stylesheet" href="/web/styles.css" />
+  </head>
+  <body class="auth-page">
+    <main class="auth-experience" id="authExperience">
+      <section class="auth-hero" id="authHero" aria-label="Welcome">
+        <div class="auth-hero-copy">
+          <p class="auth-kicker">Intelligent link platform</p>
+          <h1 class="auth-display">AI URL Shortner</h1>
+          <p class="auth-lead">
+            Create memorable short links, uncover how people engage with them, and keep every destination enriched with AI context.
+          </p>
+        </div>
+
+        <div class="auth-hero-glow auth-hero-glow-a"></div>
+        <div class="auth-hero-glow auth-hero-glow-b"></div>
+
+        <button id="enterAuthBtn" class="auth-reveal-pill" type="button">Open sign in</button>
+      </section>
+
+      <section class="auth-drawer" id="authDrawer" aria-label="Authentication">
+        <div class="auth-drawer-shell">
+          <article class="panel auth-card auth-panel-left">
+            <div class="auth-panel-copy">
+              <span class="auth-panel-badge">Welcome back</span>
+              <h2>Enter the workspace</h2>
+              <p class="meta">
+                Sign in to manage saved links, register to keep AI insights, or continue as a guest for this browser session.
+              </p>
+            </div>
+            <div id="authStatusBanner" class="auth-status-banner hidden"></div>
+            <div id="authActionSlot" class="auth-action-slot hidden"></div>
+
+            <div class="auth-switch" role="tablist" aria-label="Auth mode">
+              <button id="showLoginBtn" class="ghost active" type="button" role="tab" aria-selected="true">Login</button>
+              <button id="showRegisterBtn" class="ghost" type="button" role="tab" aria-selected="false">Register</button>
+              <button id="showGuestBtn" class="ghost" type="button" role="tab" aria-selected="false">Guest</button>
+            </div>
+
+            <section id="loginSection" class="auth-section" role="tabpanel">
+              <h3>Login</h3>
+              <button id="loginGoogleBtn" class="ghost oauth-button" type="button">Continue with Google</button>
+              <div id="loginDivider" class="auth-divider"><span>or use email</span></div>
+              <form id="loginForm" class="stack">
+                <label>
+                  <span>Email</span>
+                  <input name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+                </label>
+                <label>
+                  <span>Password</span>
+                  <input name="password" type="password" placeholder="Your password" autocomplete="current-password" required />
+                </label>
+                <button type="submit">Login</button>
+                <div id="loginError" class="form-error"></div>
+              </form>
+            </section>
+
+            <section id="registerSection" class="auth-section hidden" role="tabpanel">
+              <h3>Register</h3>
+              <button id="registerGoogleBtn" class="ghost oauth-button" type="button">Continue with Google</button>
+              <div id="registerDivider" class="auth-divider"><span>or create with email</span></div>
+              <form id="registerForm" class="stack">
+                <label>
+                  <span>Email</span>
+                  <input name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+                </label>
+                <label>
+                  <span>Password</span>
+                  <input name="password" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" required />
+                </label>
+                <button type="submit">Register</button>
+                <div id="registerError" class="form-error"></div>
+              </form>
+            </section>
+
+            <section class="auth-verification">
+              <div class="auth-verification-copy">
+                <h3>Verification</h3>
+                <p class="meta">Need another email verification link? Send it here without opening the login form.</p>
+              </div>
+              <form id="resendForm" class="stack auth-inline-form">
+                <label>
+                  <span>Email</span>
+                  <input id="resendEmailInput" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+                </label>
+                <button type="submit" class="ghost">Resend Verification</button>
+                <div id="resendError" class="form-error"></div>
+              </form>
+            </section>
+
+            <section id="guestSection" class="auth-section hidden guest-panel" role="tabpanel">
+              <h3>Guest</h3>
+              <div class="meta">Create short links instantly without creating an account.</div>
+              <a id="openGuestCreateLink" class="button-link" href="/web/create.html">Continue as Guest</a>
+            </section>
+          </article>
+
+          <aside class="panel auth-side-panel">
+            <div class="auth-side-card">
+              <span class="auth-side-label">What you unlock</span>
+              <ul class="auth-benefit-list">
+                <li>Clean short links with AI summaries</li>
+                <li>Traffic patterns by day, device, and source</li>
+                <li>Saved URL history with detail pages</li>
+              </ul>
+            </div>
+            <div class="auth-side-card auth-side-card-accent">
+              <span class="auth-side-label">Guest mode</span>
+              <p>Use the product immediately. Your guest session stays available until this browser session ends.</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <script src="/web/common.js"></script>
+    <script src="/web/auth.js"></script>
+  </body>
+  </html>

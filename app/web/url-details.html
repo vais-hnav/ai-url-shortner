@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Inspect a short link's destination, AI summary, tags, recent clicks, and per-link analytics."
+    />
+    <meta name="theme-color" content="#090909" />
+    <title>AI URL Shortner</title>
+    <link rel="stylesheet" href="/web/styles.css" />
+  </head>
+  <body class="app-page details-page">
+    <main class="app-shell">
+      <header class="topbar app-topbar">
+        <a class="brand-link" href="/web/index.html" aria-label="AI URL Shortner home">
+          <span class="brand-signal" aria-hidden="true"></span>
+          <span class="brand-stack">
+            <span class="brand-label">AI link intelligence</span>
+            <strong>AI URL Shortner</strong>
+          </span>
+        </a>
+        <div class="topbar-main">
+          <nav class="nav-cluster" aria-label="Primary">
+            <a class="nav-link nav-tab" href="/web/index.html">Dashboard</a>
+            <a class="nav-link nav-tab" href="/web/create.html">Create</a>
+            <a class="nav-link nav-tab" href="/web/analytics.html">Analytics</a>
+          </nav>
+          <div class="topbar-actions">
+            <a class="ghost utility-link" href="/web/auth.html">Account</a>
+            <button id="logoutBtn" class="ghost utility-link requires-auth">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="page-hero">
+        <div class="page-hero-copy">
+          <span class="page-kicker">Per-link view</span>
+          <h2 class="page-title">Inspect one short link in detail</h2>
+          <p class="page-description">
+            Pull up the destination, AI summary, generated tags, and the recent traffic shape for any individual short code.
+          </p>
+        </div>
+        <div class="hero-chip-list">
+          <span class="hero-chip">AI insights</span>
+          <span class="hero-chip">Traffic trend</span>
+          <span class="hero-chip">Single-link drilldown</span>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="panel span-2">
+          <div class="section-head">
+            <h2>URL Details</h2>
+            <span class="section-note">Lookup tool</span>
+          </div>
+          <form id="lookupForm" class="row">
+            <input id="shortCodeInput" name="code" type="text" placeholder="Enter short code (e.g. Ab12XyZ)" required />
+            <button type="submit" class="ghost utility-link">Load</button>
+          </form>
+          <div id="detailsError" class="form-error"></div>
+          <div id="detailsMeta" class="meta">Load a short code to view AI information and performance.</div>
+        </article>
+
+        <article class="panel span-2">
+          <div class="url-head">
+            <strong id="detailShortCode">-</strong>
+            <span id="detailTotalClicks" class="pill">0 clicks</span>
+          </div>
+          <div class="meta">Short URL</div>
+          <a id="detailShortUrl" href="#" target="_blank" rel="noopener noreferrer">-</a>
+          <div class="meta">Destination</div>
+          <div id="detailOriginalUrl">-</div>
+          <div class="meta">Created</div>
+          <div id="detailCreatedAt">-</div>
+          <div class="overview-cards">
+            <div class="kpi"><span>Last 7 Days</span><strong id="detailWindowClicks">-</strong></div>
+            <div class="kpi"><span>Top Referrer</span><strong id="detailTopReferrer">-</strong></div>
+            <div class="kpi"><span>Top Device</span><strong id="detailTopDevice">-</strong></div>
+            <div class="kpi"><span>Latest Events</span><strong id="detailRecentEvents">-</strong></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2>AI Insights</h2>
+          <div class="meta">Summary</div>
+          <div id="detailAiSummary">No AI summary available yet.</div>
+          <div class="meta">Tags</div>
+          <div id="detailAiTags" class="tag-row"></div>
+          <div class="meta">Last Updated</div>
+          <div id="detailAiUpdatedAt">-</div>
+        </article>
+
+        <article class="panel">
+          <h2>Traffic Sources</h2>
+          <div id="detailTopReferrersChart" class="chart-list"></div>
+          <div id="detailTrafficSplitChart" class="traffic-split-panel"></div>
+        </article>
+
+        <article class="panel">
+          <h2>Device Mix</h2>
+          <div id="detailDeviceMixSummary" class="mix-summary"></div>
+          <div id="detailDeviceBreakdownChart" class="chart-list"></div>
+        </article>
+
+        <article class="panel span-2">
+          <h2>Daily Click Trend</h2>
+          <div id="detailTrendLineChart" class="trend-line-card"></div>
+          <div id="detailTrendBars" class="trend-bars"></div>
+        </article>
+
+        <article class="panel span-2">
+          <h2>Recent Activity</h2>
+          <div id="detailRecentClicksList" class="list compact"></div>
+        </article>
+      </section>
+    </main>
+
+    <script src="/web/common.js"></script>
+    <script src="/web/url-details.js"></script>
+  </body>
+</html>
