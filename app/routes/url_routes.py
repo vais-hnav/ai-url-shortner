@@ -2,7 +2,7 @@ import logging
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -43,6 +43,7 @@ from app.services.ai_service import (
     get_latest_ai_insight_for_url,
     summarize_url,
 )
+from app.services.qr_service import create_branded_qr_svg
 
 router = APIRouter(prefix="/urls", tags=["urls"])
 logger = logging.getLogger(__name__)
@@ -273,6 +274,35 @@ async def get_url_details(
         ai_summary=ai_summary,
         ai_tags=ai_tags,
         ai_last_updated_at=ai_last_updated_at,
+    )
+
+
+@router.get("/{short_code}/qr.svg", include_in_schema=False)
+async def get_branded_qr_svg(
+    short_code: str,
+    theme: str = Query(default="ember", max_length=24),
+    effect: str = Query(default="glow", max_length=24),
+    label: str | None = Query(default=None, max_length=72),
+    db: AsyncSession = Depends(get_db_session),
+) -> Response:
+    shortened_url = await get_shortened_url_by_code(db=db, short_code=short_code)
+    if not shortened_url:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Short URL not found."
+        )
+
+    svg = create_branded_qr_svg(
+        short_url=_build_short_url(shortened_url.short_code),
+        short_code=shortened_url.short_code,
+        theme=theme,
+        effect=effect,
+        label=label,
+    )
+    filename = f"{shortened_url.short_code}-qr.svg"
+    return Response(
+        content=svg,
+        media_type="image/svg+xml",
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
     )
 
 

@@ -5,6 +5,7 @@ from app.services.auth_service import (
     get_user_by_email,
     get_user_by_id,
 )
+from app.services.qr_service import create_branded_qr_svg
 from app.services.url_service import (
     create_shortened_url,
     get_click_count_for_url,
@@ -20,6 +21,7 @@ __all__ = [
     "get_user_by_email",
     "get_user_by_id",
     "authenticate_user",
+    "create_branded_qr_svg",
     "create_shortened_url",
     "get_shortened_url_by_code",
     "record_click_event",

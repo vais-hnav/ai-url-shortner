@@ -83,6 +83,44 @@
         </article>
 
         <article class="panel">
+          <h2>QR Brand Studio</h2>
+          <div class="qr-studio">
+            <div class="qr-preview-shell">
+              <img id="qrPreviewImage" class="qr-preview-image" alt="Branded QR preview" />
+            </div>
+            <div class="qr-controls">
+              <label>
+                <span>Theme</span>
+                <select id="qrThemeSelect">
+                  <option value="ember">Ember</option>
+                  <option value="lime">Lime</option>
+                  <option value="violet">Violet</option>
+                  <option value="mono">Mono</option>
+                </select>
+              </label>
+              <label>
+                <span>Effect</span>
+                <select id="qrEffectSelect">
+                  <option value="glow">Glow</option>
+                  <option value="soft">Soft</option>
+                  <option value="poster">Poster</option>
+                  <option value="minimal">Minimal</option>
+                </select>
+              </label>
+              <label>
+                <span>Label</span>
+                <input id="qrLabelInput" type="text" maxlength="72" placeholder="Campaign or link label" />
+              </label>
+              <div class="row qr-action-row">
+                <a id="qrDownloadLink" class="button-link qr-download-link" href="#" download>Download SVG</a>
+                <button id="copyQrAssetBtn" class="ghost utility-link" type="button">Copy Asset Link</button>
+              </div>
+              <div id="qrStatus" class="meta">Load a short code to generate a branded QR.</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
           <h2>AI Insights</h2>
           <div class="meta">Summary</div>
           <div id="detailAiSummary">No AI summary available yet.</div>
