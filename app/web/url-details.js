@@ -21,6 +21,13 @@ if (!requireAuth()) {
     detailAiSummary: document.getElementById("detailAiSummary"),
     detailAiTags: document.getElementById("detailAiTags"),
     detailAiUpdatedAt: document.getElementById("detailAiUpdatedAt"),
+    qrPreviewImage: document.getElementById("qrPreviewImage"),
+    qrThemeSelect: document.getElementById("qrThemeSelect"),
+    qrEffectSelect: document.getElementById("qrEffectSelect"),
+    qrLabelInput: document.getElementById("qrLabelInput"),
+    qrDownloadLink: document.getElementById("qrDownloadLink"),
+    copyQrAssetBtn: document.getElementById("copyQrAssetBtn"),
+    qrStatus: document.getElementById("qrStatus"),
     detailTopReferrersChart: document.getElementById("detailTopReferrersChart"),
     detailTrafficSplitChart: document.getElementById("detailTrafficSplitChart"),
     detailDeviceMixSummary: document.getElementById("detailDeviceMixSummary"),
@@ -29,6 +36,49 @@ if (!requireAuth()) {
     detailTrendBars: document.getElementById("detailTrendBars"),
     detailRecentClicksList: document.getElementById("detailRecentClicksList"),
   };
+  const state = {
+    currentShortCode: "",
+    currentShortUrl: "",
+    currentQrUrl: "",
+  };
+
+  function buildQrUrl() {
+    if (!state.currentShortCode) return "";
+    const params = new URLSearchParams();
+    params.set("theme", el.qrThemeSelect?.value || "ember");
+    params.set("effect", el.qrEffectSelect?.value || "glow");
+    const label = String(el.qrLabelInput?.value || "").trim();
+    if (label) {
+      params.set("label", label);
+    }
+    return `/urls/${encodeURIComponent(state.currentShortCode)}/qr.svg?${params.toString()}`;
+  }
+
+  function renderQrStudio() {
+    const qrUrl = buildQrUrl();
+    state.currentQrUrl = qrUrl;
+    if (!qrUrl) {
+      el.qrPreviewImage?.removeAttribute("src");
+      if (el.qrDownloadLink) {
+        el.qrDownloadLink.setAttribute("href", "#");
+        el.qrDownloadLink.removeAttribute("download");
+      }
+      if (el.qrStatus) el.qrStatus.textContent = "Load a short code to generate a branded QR.";
+      return;
+    }
+    if (el.qrPreviewImage) {
+      el.qrPreviewImage.src = qrUrl;
+    }
+    if (el.qrDownloadLink) {
+      el.qrDownloadLink.href = qrUrl;
+      el.qrDownloadLink.setAttribute("download", `${state.currentShortCode}-qr.svg`);
+    }
+    if (el.qrStatus) {
+      el.qrStatus.textContent = state.currentShortUrl
+        ? `QR points to ${state.currentShortUrl}`
+        : "QR preview is ready.";
+    }
+  }
 
   function renderTags(tags) {
     const list = Array.isArray(tags) ? tags.filter(Boolean) : [];
@@ -226,6 +276,8 @@ if (!requireAuth()) {
       ]);
 
       el.detailShortCode.textContent = details.short_code || "-";
+      state.currentShortCode = details.short_code || "";
+      state.currentShortUrl = details.short_url || "";
       el.detailTotalClicks.textContent = `${formatNumber(details.total_clicks || 0)} clicks`;
       el.detailShortUrl.textContent = details.short_url || "-";
       if (details.short_url) {
@@ -247,6 +299,10 @@ if (!requireAuth()) {
       el.detailAiUpdatedAt.textContent = details.ai_last_updated_at
         ? new Date(details.ai_last_updated_at).toLocaleString()
         : "-";
+      if (el.qrLabelInput && !el.qrLabelInput.value.trim()) {
+        el.qrLabelInput.value = details.short_code ? `Campaign / ${details.short_code}` : "";
+      }
+      renderQrStudio();
       renderBars(daily.daily_clicks || []);
       renderComparisonChart(el.detailTopReferrersChart, analytics.top_referrers || [], "clicks", {
         formatter: (value) => `${formatNumber(value)} clicks`,
@@ -268,6 +324,9 @@ if (!requireAuth()) {
       el.detailTopReferrer.textContent = "-";
       el.detailTopDevice.textContent = "-";
       el.detailRecentEvents.textContent = "-";
+      state.currentShortCode = "";
+      state.currentShortUrl = "";
+      renderQrStudio();
       renderBars([]);
       renderComparisonChart(el.detailTopReferrersChart, [], "clicks");
       renderDeviceMix([]);
@@ -287,6 +346,23 @@ if (!requireAuth()) {
   el.logoutBtn.addEventListener("click", () => {
     showToast("Signed out", "info");
     logoutAndRedirect();
+  });
+
+  [el.qrThemeSelect, el.qrEffectSelect].forEach((node) => {
+    node?.addEventListener("change", renderQrStudio);
+  });
+
+  el.qrLabelInput?.addEventListener("input", renderQrStudio);
+
+  el.copyQrAssetBtn?.addEventListener("click", async () => {
+    if (!state.currentQrUrl) return;
+    const absoluteUrl = new URL(state.currentQrUrl, window.location.origin).toString();
+    try {
+      await navigator.clipboard.writeText(absoluteUrl);
+      showToast("QR asset link copied", "success");
+    } catch {
+      showToast("Copy failed", "error");
+    }
   });
 
   (async () => {

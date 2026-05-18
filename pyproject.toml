@@ -20,6 +20,7 @@ dependencies = [
   "authlib==1.6.0",
   "itsdangerous==2.2.0",
   "fastapi-mail==1.5.8",
+  "qrcode==8.2",
 ]
 
 [tool.setuptools.packages.find]

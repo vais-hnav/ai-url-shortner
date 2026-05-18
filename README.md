@@ -48,6 +48,7 @@ This repository already includes:
 - daily analytics series for charting
 - AI URL summarization and tagging
 - persisted AI insight history
+- branded QR code generation
 - email/password auth with verification
 - Google sign-in
 - frontend UI for auth, create, analytics, dashboard, and link details
@@ -98,6 +99,15 @@ This repository already includes:
 - safe URL fetching with localhost blocking for AI fetches
 - YouTube-friendly content extraction using oEmbed
 
+### QR Branding
+
+- generate branded QR codes for short links
+- serve QR assets as downloadable SVG
+- support multiple visual themes
+- support glow, soft, poster, and minimal effects
+- allow custom label text on the QR asset
+- keep QR generation backend-owned so the asset points to the real short URL
+
 ### Authentication and Accounts
 
 - optional email/password account creation
@@ -115,6 +125,7 @@ This repository already includes:
 - analytics page
 - dashboard page
 - URL details page
+- branded QR studio on each URL detail page
 - shared UI helpers and styles
 - responsive dark theme
 - production-style drawer interaction for auth
@@ -283,6 +294,7 @@ Fields include:
 - `GET /urls/mine` -> list URLs owned by the signed-in user
 - `GET /urls/analytics/overview` -> user analytics overview
 - `GET /urls/{short_code}/details` -> link detail page data
+- `GET /urls/{short_code}/qr.svg` -> branded QR SVG for the short link
 - `DELETE /urls/{short_code}` -> delete a user-owned link
 - `GET /urls/{short_code}` -> permanent redirect + tracking
 - `GET /urls/r/{short_code}` -> legacy redirect path
@@ -320,7 +332,7 @@ The app serves a browser UI from `app/web/`.
 - `analytics.html` and `analytics.js`
   - analytics overview and charting
 - `url-details.html` and `url-details.js`
-  - per-link analytics and AI insight view
+  - per-link analytics, AI insight view, and branded QR studio
 - `styles.css`
   - complete visual system
 - `common.js`
@@ -385,6 +397,32 @@ The AI fetch layer:
 - blocks localhost and loopback hosts
 - refuses non-HTML content
 - handles YouTube specially using oEmbed
+
+## QR Branding Notes
+
+The QR branding layer generates SVG assets directly from the app. This matters because the QR code should always point to the current public short URL and should not depend on an external QR generator service.
+
+The QR endpoint is:
+
+```text
+GET /urls/{short_code}/qr.svg
+```
+
+It supports query options:
+
+```text
+theme=ember|lime|violet|mono
+effect=glow|soft|poster|minimal
+label=<optional display label>
+```
+
+Example:
+
+```text
+/urls/demo123/qr.svg?theme=ember&effect=glow&label=Launch%20Campaign
+```
+
+The frontend exposes this through the URL details page. Users can preview the QR code, switch themes, switch effects, edit the visible label, download the SVG, or copy the QR asset link.
 
 ## Authentication Notes
 
@@ -628,6 +666,7 @@ https://urls.rf.gd/abc123x
 - auth screen redesign
 - dashboard and analytics pages
 - per-link details pages
+- branded QR studio
 - improved UX and styling
 
 ### Milestone 5
@@ -653,6 +692,14 @@ https://urls.rf.gd/abc123x
 - AI insight persistence
 - Gemini integration with fallback summarization
 
+### QR Branding Milestone
+
+- backend-generated QR SVG assets
+- per-link QR preview
+- theme and effect controls
+- SVG download support
+- copyable QR asset URLs
+
 ## Work Done So Far
 
 The project has already gone through these major implementation steps:
@@ -668,6 +715,7 @@ The project has already gone through these major implementation steps:
 - added authentication with JWT
 - added email verification and Google sign-in
 - built a full frontend experience
+- added a branded QR studio for short links
 - added Docker and Render deployment support
 - added a Makefile and CI workflow
 - refined the auth drawer interaction on the frontend
@@ -693,7 +741,7 @@ Planned next steps include:
 - spam/phishing detection
 - richer AI analytics insights
 - smarter routing by behavior or location
-- QR branding and visual link assets
+- PNG export and richer QR campaign templates
 - natural-language analytics search
 - stronger tests around API and frontend behavior
 - improved admin and team collaboration features
